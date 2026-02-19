@@ -14,10 +14,23 @@
     :field private routes←⍬ 
     :field private testVal←'test'
     :field private app
+    :field private db
     
     ∇ Make
         :Access Public
         :implements constructor
+        db←(
+          customers: (
+            (
+              invoices: (1/(
+                id: 12
+                products: ('Dyalog APL' 'Golayd LPA')
+                amount: 500
+                currency: 'USD'
+              ))
+            )
+          )
+        )
         app←⎕NEW ##.FastJarvis
         app.Handlers←⎕THIS
         app.Add¨{m←{∨/'⍝@'⍷⍵}¨⍵⋄{(⊂({⍵↑⍨¯1+⍵⍳' '}(⊃⌽⍵)↓⍨'←'⍳⍨⊃⌽⍵)),⍨⊂(⊃⍵)↓⍨2+'⍝@ '(⍸⍷)⊃⍵}¨⍵⊆⍨∊∨/0 ¯1⌽¨⊂m}⎕SRC (⊃∊⎕CLASS ⎕THIS)
@@ -71,6 +84,20 @@
         query: req.QueryParams ⎕VGET ⊂(,'q') '' ⍝ e.g. GET /search?q=apple
         results: 'mock' 'data'      ⍝ real app would query a database here
       )
+    ∇
+
+    ⍝@ GET /customer/{cust_id}/invoice/{inv_id}
+    ∇ result←getCustomerInvoice req;cust
+      :access public
+      ⍝ Do stuff
+      ⍝ Get the customer object
+      cust←db.customers[⊃2⊃⎕VFI req.PathParams.cust_id]
+      result←cust.invoices[⊃2⊃⎕VFI req.PathParams.inv_id]
+
+      ⍝ result←(
+      ⍝   customer: req.PathParams.cust_id
+      ⍝   invoice: req.PathParams.inv_id
+      ⍝ )
     ∇
 :EndClass
 
