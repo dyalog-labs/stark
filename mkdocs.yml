@@ -1,0 +1,30 @@
+site_name: Stark
+site_description: A modern REST API framework for Dyalog APL
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: deep purple
+  features:
+    - content.code.copy
+    - navigation.sections
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Stark Router: stark-router.md
+  - OpenAPI Generation: openapi.md
+  - Jarvis Server: jarvis-server.md
+  - Examples: examples.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true

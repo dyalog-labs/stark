@@ -1,5 +1,5 @@
 :Class ExampleApp
-⍝ Example application using the Router class.
+⍝ Example application using the Stark class.
 ⍝
 ⍝   app←⎕NEW ExampleApp
 ⍝   app.Start 8080
@@ -12,24 +12,27 @@
       :Access Public
       :Implements Constructor
 
-      ⍝ ── Sample data ──────────────────────────────────────────────────────
-      db←⎕NS ''
-      db.items←⍬
-      db.items,←⊂(id: 1 ⋄ name: 'Dyalog APL' ⋄ price: 0 ⋄ tags: 'language' 'array')
-      db.items,←⊂(id: 2 ⋄ name: 'SharpPlot'  ⋄ price: 0 ⋄ tags: 'graphics' 'charting')
+      ⍝ Sample data
+      db←(
+        items: (
+          (id: 1 ⋄ name: 'Dyalog APL' ⋄ price: 0 ⋄ tags: 'language' 'array')
+          (id: 2 ⋄ name: 'SharpPlot'  ⋄ price: 0 ⋄ tags: 'graphics' 'charting')
+        )
+      )
 
-      ⍝ ── Router setup ─────────────────────────────────────────────────────
-      router←⎕NEW ##.Router
+      ⍝ Stark setup
+      router←⎕NEW ##.Stark
       router.Handlers←⎕THIS
+      router.Info←(title: 'Example Items API' ⋄ version: '1.0.0')
 
-      '/'                              router.Get    'Root'
-      '/items'                         router.Get    'ListItems'
-      '/items/{id}'                    router.Get    'GetItem'
-      '/items'                         router.Post   'CreateItem'
-      '/items/{id}'                    router.Put    'UpdateItem'
-      '/items/{id}'                    router.Delete 'DeleteItem'
-      '/search'                        router.Get    'SearchItems'
-      '/customer/{cust_id}/invoice/{inv_id}' router.Get 'GetInvoice'
+      '/' router.Get ('Root' RootSchema)
+      '/items' router.Get ('ListItems' ListItemsSchema)
+      '/items/{id}' router.Get ('GetItem' GetItemSchema)
+      '/items' router.Post ('CreateItem' CreateItemSchema)
+      '/items/{id}' router.Put ('UpdateItem' UpdateItemSchema)
+      '/items/{id}' router.Delete ('DeleteItem' )
+      '/search' router.Get ('SearchItems' SearchItemsSchema)
+      '/customer/{cust_id}/invoice/{inv_id}' router.Get ('GetInvoice' GetInvoiceSchema)
     ∇
 
     ∇ Start port
@@ -42,23 +45,37 @@
       router.Stop
     ∇
 
-    ∇ r←GetRouter
+    ∇ r←GetStark
       :Access Public
       r←router
     ∇
 
-    ⍝ ── Handlers ───────────────────────────────────────────────────────────
+    ⍝ Handlers
 
+    RootSchema←(
+        summary: 'Health check'
+        tags: ('status'⋄)
+    )
     ∇ result←Root req
       :Access Public
       result←(status: 'ok')
     ∇
 
+
+    ListItemsSchema←(
+        summary: 'List all items'
+        tags: ('items'⋄)
+    )
     ∇ result←ListItems req
       :Access Public
       result←(items: db.items ⋄ total: ≢db.items)
     ∇
 
+
+    GetItemSchema←(
+        summary: 'Get an item by ID'
+        tags: ('items'⋄)
+    )
     ∇ result←GetItem req;id;matches
       :Access Public
       id←⊃2⊃⎕VFI req.PathParams.id
@@ -71,6 +88,21 @@
       :EndIf
     ∇
 
+
+    CreateItemSchema←(
+        summary: 'Create a new item'
+        tags: ('items'⋄)
+        body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
+            name:  (type: 'string')
+            price: (type: 'number')
+        ))
+        response: (201 (type: 'object' ⋄ properties: (
+            id:    (type: 'integer')
+            name:  (type: 'string')
+            price: (type: 'number')
+            tags:  (type: 'array' ⋄ items: (type: 'string'))
+        )))
+    )
     ∇ result←CreateItem req;body;item
       :Access Public
       body←req.Payload
@@ -84,6 +116,15 @@
       result←item
     ∇
 
+
+    UpdateItemSchema←(
+        summary: 'Update an item'
+        tags: ('items'⋄)
+        body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
+            name:  (type: 'string')
+            price: (type: 'number')
+        ))
+    )
     ∇ result←UpdateItem req;id;idx;body
       :Access Public
       id←⊃2⊃⎕VFI req.PathParams.id
@@ -99,6 +140,11 @@
       :EndIf
     ∇
 
+
+    DeleteItemSchema←(
+        summary: 'Delete an item'
+        tags: ('items'⋄)
+    )
     ∇ result←DeleteItem req;id;mask
       :Access Public
       id←⊃2⊃⎕VFI req.PathParams.id
@@ -112,12 +158,21 @@
       :EndIf
     ∇
 
+    SearchItemsSchema←(
+        summary: 'Search items'
+        tags: ('search'⋄)
+    )
     ∇ result←SearchItems req;q
       :Access Public
       q←req.QueryParams ⎕VGET ⊂(,'q') ''
       result←(query: q ⋄ results: 'mock' 'data' ⋄ total: 2)
     ∇
 
+
+    GetInvoiceSchema←(
+        summary: 'Get a customer invoice'
+        tags: ('invoices'⋄)
+    )
     ∇ result←GetInvoice req
       :Access Public
       result←(customer: req.PathParams.cust_id ⋄ invoice: req.PathParams.inv_id)
