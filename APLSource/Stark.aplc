@@ -2,11 +2,12 @@
 ⍝ Fastify-style HTTP router for Dyalog APL, built on top of Jarvis.
 ⍝
 ⍝ Usage:
+⍝   ⍝ First define your functions, ListUsers, and GetUser, and CreateUser
 ⍝   router←⎕NEW Stark
-⍝   router.Handlers←myAppNS
-⍝   router.Get  '/users'      'ListUsers'
-⍝   router.Get  '/users/{id}' 'GetUser'
-⍝   router.Post '/users'      ('CreateUser' opts)   ⍝ opts is an APLAN ns with metadata
+⍝   router.Handlers←⎕THIS
+⍝   '/users'      router.Get   'ListUsers'
+⍝   '/users/{id}' router.Get   'GetUser'
+⍝   '/users'      router.Post ('CreateUser' opts)   ⍝ opts is an APLAN ns with metadata
 ⍝   router.Start 8080
 
     :Field Public  Handlers      ⍝ namespace where handler functions live
@@ -18,17 +19,15 @@
     ∇ Make0
       :Access Public
       :Implements Constructor
+      Info←(title: 'AStarkAPI' ⋄ version: '1.0.0')
       Handlers←⍬
-      Info←(title: 'API' ⋄ version: '1.0.0')
       _routes←⍬
       _jarvis←⍬
     ∇
 
-    ⍝ ── Route registration: one method per HTTP verb ────────────────────────
-    ⍝
-    ⍝ Dyadic: path on left, right is either 'handlerName' or ('handlerName' opts)
-    ⍝   path router.Get 'HandlerName'
-    ⍝   path router.Get ('HandlerName' opts)
+    ⍝ Route registration
+    ⍝ path router.Get 'HandlerName'
+    ⍝ path router.Get ('HandlerName' opts)
 
     ∇ {r}←path Get rarg
       :Access Public Instance
@@ -55,15 +54,22 @@
       r←_Register 'PATCH' path rarg
     ∇
 
-    ⍝ ── Internal registration ──────────────────────────────────────────────
 
-    ∇ {r}←_Register(method path rarg);handler;options
+    ∇ {r}←_Register(method path rarg);handler;options;norm;existing
       :Access Private Instance
       :If 1≠≡rarg                           ⍝ nested: ('HandlerName' options)
           (handler options)←rarg
-      :Else
+      :ElseIf ⍕⍛≡rarg
           handler←rarg                     ⍝ simple string
           options←()
+      :Else
+        ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Right argument to Register must be a string (handler name) or a 2-element vector (handler name, options)'))
+      :EndIf
+      ⍝ Check for duplicate routes: normalize {param} segments so {id} and {user_id} match
+      norm←_NormalizePath path
+      existing←((⎕C¨_routes.method)∊⊂⎕C method)/_routes
+      :If (⊂norm)∊_NormalizePath¨existing.pattern
+          ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Duplicate route: ',method,' ',path,' conflicts with an existing registration'))
       :EndIf
       r←(
         method: method
@@ -74,11 +80,13 @@
       _routes,←r
     ∇
 
-    ⍝ ── Path matching ──────────────────────────────────────────────────────
-    ⍝
-    ⍝ pattern pathMatch path → (matched pathParams)
-    ⍝ Compares a pattern like '/users/{id}' against a path like '/users/42'.
+    ⍝ Cover function for 7162⌶ (mangle string into valid APL name)
+    _Mangle←{0(7162⌶)⍵}
 
+    ⍝ Replace {param} segments with a placeholder so structurally identical paths match
+    _NormalizePath←{⍵/⍨~+\∊+/¯1 0⌽¨1 ¯1×↓'{}'∘.=⍵}
+
+    ⍝ pattern pathMatch path → (matched pathParams)
     pathMatch←{
         patSplit pathSplit←'/'(≠⊆⊢)¨⍺ ⍵
         pathSplit≢⍥≢patSplit:0()
@@ -88,10 +96,7 @@
         1(()⎕VSET↓⍉↑names(pathSplit[⍸varMask]))
     }
 
-    ⍝ ── Dispatch ───────────────────────────────────────────────────────────
-    ⍝
-    ⍝ Routes an incoming Jarvis request to the matching handler.
-
+    ⍝ Route an incoming Jarvis request to the matching handler
     ∇ result←_Dispatch req;routes;r;matched;pp
       :Access Public Instance
       routes←((⎕C¨_routes.method)∊⊂⎕C req.Method)/_routes
@@ -109,11 +114,12 @@
           :EndIf
       :EndFor
       req.Fail 404
-      result←⎕NS ''
-      result.detail←'Not Found'
+      result←(
+        detail: 'Not Found'
+      )
     ∇
 
-    ⍝ ── OpenAPI spec generation ─────────────────────────────────────────────
+    ⍝ OpenAPI spec generation
 
     ∇ r←OpenAPI
       :Access Public Instance
@@ -127,42 +133,52 @@
 
     ∇ spec←_BuildOpenAPI;paths;r;pathKey;pathNS;method;op;opts;segs;varMask;param;pNS;ct;code;schemaNS;e;respNS;respKey;ctKey
       :Access Private Instance
-      ⍝ 0(7162⌶) mangles strings into valid APL names; ⎕JSON demangles them back
-      spec←⎕NS ''
-      spec.openapi←'3.0.3'
-      spec.info←Info
-      ctKey←0(7162⌶)'application/json'
+      ⍝ _Mangle mangles strings into valid APL names; ⎕JSON will unmangle them
+      spec←(
+        openapi: '3.0.3'
+        info: Info
+      )
+      ctKey←_Mangle'application/json'
 
-      paths←⎕NS ''
+      paths←()
       :For r :In _routes
           :If '_'=⊃r.handler ⋄ :Continue ⋄ :EndIf   ⍝ skip internal routes
 
           ⍝ Get or create path object
-          pathKey←0(7162⌶)r.pattern
+          pathKey←_Mangler.pattern
           :If 0=paths.⎕NC⊂pathKey
-              paths⎕VSET ⊂pathKey ()
+              paths ⎕VSET ⊂pathKey ()
           :EndIf
           pathNS←paths ⎕VGET pathKey
 
           ⍝ Build operation object
           method←⎕C r.method
-          op←⎕NS ''
-          op.parameters←⍬
-          op.responses←⎕NS ''
+          op←(
+            parameters: ⍬
+            responses: ()
+          )
+
+          ⍝ Map metadata from route options
+          opts←r.options
+          op.operationId←r.handler
 
           ⍝ Extract path parameters from {param} segments
+          ⍝ If opts.params.{name} exists, its schema overrides the default 'string'
           segs←'/'(≠⊆⊢)r.pattern
           varMask←'{'=⊃¨segs
           :For param :In {1↓¯1↓⍵}¨varMask/segs
-              pNS←(name: param ⋄ in: 'path' ⋄ required: (⊂'true') ⋄ schema: (type: 'string'))
+              :If (9=⎕NC'opts')∧(9=opts.⎕NC'params')∧(9=opts.params.⎕NC⊂param)
+                  pNS←(name: param ⋄ in: 'path' ⋄ required: (⊂'true') ⋄ schema: (opts.params⍎param))
+              :Else
+                  pNS←(name: param ⋄ in: 'path' ⋄ required: (⊂'true') ⋄ schema: (type: 'string'))
+              :EndIf
               op.parameters,←⊂pNS
           :EndFor
           :If 0=≢op.parameters ⋄ op.⎕EX'parameters' ⋄ :EndIf
 
-          ⍝ Map metadata from route options
-          opts←r.options
           :If 9=⎕NC'opts'
-              :If 2=opts.⎕NC'summary'     ⋄ op.summary←opts.summary         ⋄ :EndIf
+              :If 2=opts.⎕NC'operationId'  ⋄ op.operationId←opts.operationId  ⋄ :EndIf
+              :If 2=opts.⎕NC'summary'      ⋄ op.summary←opts.summary          ⋄ :EndIf
               :If 2=opts.⎕NC'description'  ⋄ op.description←opts.description  ⋄ :EndIf
               :If 2=opts.⎕NC'tags'         ⋄ op.tags←opts.tags                ⋄ :EndIf
 
@@ -177,14 +193,14 @@
                   (code schemaNS)←opts.response
                   ct←() ⎕VSET ⊂ctKey (schema: schemaNS)
                   respNS←(description: 'Successful response' ⋄ content: ct)
-                  respKey←0(7162⌶)⍕code
+                  respKey←_Mangle⍕code
                   op.responses ⎕VSET ⊂respKey respNS
               :EndIf
 
               ⍝ Error responses: vector of (statusCode description) pairs
               :If 2≤opts.⎕NC'errors'
                   :For e :In opts.errors
-                      respKey←0(7162⌶)⍕⊃e
+                      respKey←_Mangle⍕⊃e
                       op.responses ⎕VSET ⊂respKey (description: 2⊃e)
                   :EndFor
               :EndIf
@@ -192,7 +208,7 @@
 
           ⍝ Default 200 response if none specified
           :If 0=≢op.responses.⎕NL ¯2 ¯9
-              respKey←0(7162⌶)'200'
+              respKey←_Mangle'200'
               op.responses ⎕VSET ⊂respKey (description: 'Successful response')
           :EndIf
 
@@ -202,7 +218,6 @@
       spec.paths←paths
     ∇
 
-    ⍝ ── Server lifecycle ───────────────────────────────────────────────────
 
     ∇ Start port;code;j
       :Access Public Instance
@@ -231,7 +246,6 @@
       _jarvis.Stop
     ∇
 
-    ⍝ ── Inspection ─────────────────────────────────────────────────────────
 
     ∇ r←Routes
       :Access Public Instance
