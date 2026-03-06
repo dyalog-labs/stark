@@ -1,0 +1,145 @@
+:Class Router
+⍝ Fastify-style HTTP router for Dyalog APL, built on top of Jarvis.
+⍝
+⍝ Usage:
+⍝   router←⎕NEW Router
+⍝   router.Handlers←myAppNS
+⍝   router.Get  '/users'      'ListUsers'
+⍝   router.Get  '/users/{id}' 'GetUser'
+⍝   router.Post '/users'      ('CreateUser' opts)   ⍝ opts is an APLAN ns with metadata
+⍝   router.Start 8080
+
+    :Field Public  Handlers      ⍝ namespace where handler functions live
+    :Field Public  ThreadMode←'' ⍝ DYALOG_JARVIS_THREAD: '' (Jarvis default), 0, 1, 'DEBUG', 'AUTO'
+    :Field Private _routes       ⍝ vector of route descriptor namespaces
+    :Field Private _jarvis       ⍝ underlying Jarvis instance
+
+    ∇ Make0
+      :Access Public
+      :Implements Constructor
+      Handlers←⍬
+      _routes←⍬
+      _jarvis←⍬
+    ∇
+
+    ⍝ ── Route registration: one method per HTTP verb ────────────────────────
+    ⍝
+    ⍝ Dyadic: path on left, right is either 'handlerName' or ('handlerName' opts)
+    ⍝   path router.Get 'HandlerName'
+    ⍝   path router.Get ('HandlerName' opts)
+
+    ∇ {r}←path Get rarg
+      :Access Public Instance
+      r←_Register 'GET' path rarg
+    ∇
+
+    ∇ {r}←path Post rarg
+      :Access Public Instance
+      r←_Register 'POST' path rarg
+    ∇
+
+    ∇ {r}←path Put rarg
+      :Access Public Instance
+      r←_Register 'PUT' path rarg
+    ∇
+
+    ∇ {r}←path Delete rarg
+      :Access Public Instance
+      r←_Register 'DELETE' path rarg
+    ∇
+
+    ∇ {r}←path Patch rarg
+      :Access Public Instance
+      r←_Register 'PATCH' path rarg
+    ∇
+
+    ⍝ ── Internal registration ──────────────────────────────────────────────
+
+    ∇ {r}←_Register(method path rarg);handler;options
+      :Access Private Instance
+      :If 1≠≡rarg                           ⍝ nested: ('HandlerName' options)
+          (handler options)←rarg
+      :Else
+          handler←rarg                     ⍝ simple string
+          options←()
+      :EndIf
+      r←(
+        method: method
+        pattern: ,path
+        handler: handler
+        options: options
+      )
+      _routes,←r
+    ∇
+
+    ⍝ ── Path matching ──────────────────────────────────────────────────────
+    ⍝
+    ⍝ pattern pathMatch path → (matched pathParams)
+    ⍝ Compares a pattern like '/users/{id}' against a path like '/users/42'.
+
+    pathMatch←{
+        patSplit pathSplit←'/'(≠⊆⊢)¨⍺ ⍵
+        pathSplit≢⍥≢patSplit:0()
+        varMask←'{'=⊃¨patSplit
+        ≢/(⊂~varMask)/¨patSplit pathSplit:0()
+        names←({1↓¯1↓⍵}¨patSplit[⍸varMask])
+        1(()⎕VSET↓⍉↑names(pathSplit[⍸varMask]))
+    }
+
+    ⍝ ── Dispatch ───────────────────────────────────────────────────────────
+    ⍝
+    ⍝ Routes an incoming Jarvis request to the matching handler.
+
+    ∇ result←_Dispatch req;routes;r;matched;pp
+      :Access Public Instance
+      routes←((⎕C¨_routes.method)∊⊂⎕C req.Method)/_routes
+      :For r :In routes
+          (matched pp)←r.pattern pathMatch req.Endpoint
+          :If matched
+              req.PathParams←pp
+              req.QueryParams←(⎕NS '')⎕VSET{(,⊃⍵)(2⊃⍵)}¨↓req.QueryParams
+              result←(Handlers⍎r.handler)req
+              :Return
+          :EndIf
+      :EndFor
+      req.Fail 404
+      result←⎕NS ''
+      result.detail←'Not Found'
+    ∇
+
+    ⍝ ── Server lifecycle ───────────────────────────────────────────────────
+
+    ∇ Start port;code;j
+      :Access Public Instance
+      code←⎕NS ''
+      code.inst←⎕THIS
+      code.Get←{inst._Dispatch ⍵}
+      code.Post←{inst._Dispatch ⍵}
+      code.Put←{inst._Dispatch ⍵}
+      code.Delete←{inst._Dispatch ⍵}
+      code.Patch←{inst._Dispatch ⍵}
+      j←⎕NEW #.Jarvis
+      j.Port←port
+      j.Paradigm←'REST'
+      j.CodeLocation←code
+      j.RESTFailProcessing←1
+      :If ''≢ThreadMode
+          j.DYALOG_JARVIS_THREAD←ThreadMode
+      :EndIf
+      j.Start
+      _jarvis←j
+    ∇
+
+    ∇ Stop
+      :Access Public Instance
+      _jarvis.Stop
+    ∇
+
+    ⍝ ── Inspection ─────────────────────────────────────────────────────────
+
+    ∇ r←Routes
+      :Access Public Instance
+      r←_routes
+    ∇
+
+:EndClass

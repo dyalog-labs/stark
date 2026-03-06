@@ -1,0 +1,184 @@
+:Class ConceptApp
+⍝ Concept: executable decorator syntax for OpenAPI spec generation.
+⍝
+⍝ Each ⍝@ block is valid APL stripped of its ⍝@  prefixes and eval'd.
+⍝ The call registers the route; the ∇ that follows provides the handler.
+⍝
+⍝   ⍝@ app.Get(path: '/items/{item_id}')          ← minimal, one line
+⍝
+⍝   ⍝@ app.Post(                                   ← with metadata
+⍝   ⍝@   path:    '/items'
+⍝   ⍝@   summary: 'Create item'
+⍝   ⍝@   ...
+⍝   ⍝@ )                                           ← closing ) ends the decorator
+⍝   ∇ handler req                                  ← ∇ begins the function
+⍝
+⍝ HTTP verb is the method name: app.Get  app.Post  app.Put  app.Delete  app.Patch
+⍝ Schema names (e.g. 'Item') are resolved against public :fields on this class.
+
+    :field private app
+
+    ⍝ ── Schemas ── named fields; referenced by string in metadata ─────────────
+
+    :field public Item←(
+      type: 'object'
+      properties: (
+        id:    (type: 'integer')
+        name:  (type: 'string')
+        price: (type: 'number' ⋄ format: 'float')
+        tags:  (type: 'array' ⋄ items: (type: 'string'))
+      )
+      required: 'id' 'name' 'price'
+    )
+
+    :field public NewItem←(
+      type: 'object'
+      properties: (
+        name:  (type: 'string')
+        price: (type: 'number' ⋄ format: 'float')
+        tags:  (type: 'array' ⋄ items: (type: 'string'))
+      )
+      required: 'name' 'price'
+    )
+
+    :field public Error←(
+      type: 'object'
+      properties: (detail: (type: 'string'))
+    )
+
+    ∇ Make
+      :Access Public
+      :Implements constructor
+      app←⎕NEW ##.FastJarvis
+      app.Handlers←⎕THIS
+      app.OpenAPIInfo←(
+        title:       'Item Catalog API'
+        version:     '1.0.0'
+        description: 'A demo catalog — concept for executable decorator metadata'
+      )
+      ⍝ ⎕SRC scan: collect consecutive ⍝@ lines, strip prefix, eval each block,
+      ⍝ then associate with the ∇ function that immediately follows.
+      app.Add¨{...}⎕SRC (⊃∊⎕CLASS ⎕THIS)
+    ∇
+
+    ∇ Start port
+      :Access Public
+      app.Start port
+    ∇
+
+
+    ⍝ ─────────────────────────── items ───────────────────────────────────────
+
+    ⍝@ app.Get(
+    ⍝@   path:        '/items'
+    ⍝@   summary:     'List all items'
+    ⍝@   description: 'Returns the catalog, optionally filtered by tag.'
+    ⍝@   tags:        ,'items'
+    ⍝@   params:      ⊂(name: 'tag'  in: 'query'  required: 0  schema: (type: 'string'))
+    ⍝@   responses:   (200: (description: 'Array of items'  schema: (type: 'array' ⋄ items: 'Item')))
+    ⍝@ )
+    ∇ result←listItems req;tag
+      :Access Public
+      tag←req.QueryParams ⎕VGET ⊂'tag' ''
+      result←(items: 'mock' 'data'  total: 2)
+    ∇
+
+    ⍝@ app.Get(
+    ⍝@   path:      '/items/{item_id}'
+    ⍝@   summary:   'Get item by ID'
+    ⍝@   tags:      ,'items'
+    ⍝@   params:    ⊂(name: 'item_id'  in: 'path'  required: 1  schema: (type: 'integer' ⋄ minimum: 1))
+    ⍝@   responses: (
+    ⍝@     200: (description: 'The requested item'  schema: 'Item')
+    ⍝@     404: (description: 'Item not found'      schema: 'Error')
+    ⍝@   )
+    ⍝@ )
+    ∇ result←getItemById req
+      :Access Public
+      result←(id: req.PathParams.item_id  name: 'Mock item'  price: 9.99  tags: ,'general')
+    ∇
+
+    ⍝@ app.Post(
+    ⍝@   path:      '/items'
+    ⍝@   summary:   'Create a new item'
+    ⍝@   tags:      ,'items'
+    ⍝@   body:      (required: 1  schema: 'NewItem')
+    ⍝@   responses: (
+    ⍝@     201: (description: 'Item created'     schema: 'Item')
+    ⍝@     422: (description: 'Validation error' schema: 'Error')
+    ⍝@   )
+    ⍝@ )
+    ∇ result←createItem req;body
+      :Access Public
+      body←req.Payload
+      result←(id: 42  name: body.name  price: body.price  tags: ⍬)
+    ∇
+
+    ⍝@ app.Put(
+    ⍝@   path:      '/items/{item_id}'
+    ⍝@   summary:   'Replace an item'
+    ⍝@   tags:      ,'items'
+    ⍝@   params:    ⊂(name: 'item_id'  in: 'path'  required: 1  schema: (type: 'integer'))
+    ⍝@   body:      (required: 1  schema: 'NewItem')
+    ⍝@   responses: (
+    ⍝@     200: (description: 'Updated item'    schema: 'Item')
+    ⍝@     404: (description: 'Item not found'  schema: 'Error')
+    ⍝@   )
+    ⍝@ )
+    ∇ result←replaceItem req;body
+      :Access Public
+      body←req.Payload
+      result←(id: req.PathParams.item_id  name: body.name  price: body.price  tags: ⍬)
+    ∇
+
+    ⍝@ app.Delete(
+    ⍝@   path:       '/items/{item_id}'
+    ⍝@   summary:    'Delete an item'
+    ⍝@   tags:       ,'items'
+    ⍝@   deprecated: 1
+    ⍝@   params:     ⊂(name: 'item_id'  in: 'path'  required: 1  schema: (type: 'integer'))
+    ⍝@   responses:  (
+    ⍝@     204: (description: 'Deleted successfully')
+    ⍝@     404: (description: 'Item not found'  schema: 'Error')
+    ⍝@   )
+    ⍝@ )
+    ∇ result←deleteItem req
+      :Access Public
+      result←(deleted: 1  id: req.PathParams.item_id)
+    ∇
+
+
+    ⍝ ─────────────────────────── search ──────────────────────────────────────
+
+    ⍝@ app.Get(
+    ⍝@   path:        '/search'
+    ⍝@   summary:     'Full-text search across the catalog'
+    ⍝@   tags:        ,'search'
+    ⍝@   params:      (
+    ⍝@     (name: 'q'       in: 'query'  required: 1  schema: (type: 'string')                        description: 'Search query')
+    ⍝@     (name: 'limit'   in: 'query'  required: 0  schema: (type: 'integer' ⋄ default: 20 ⋄ max: 100) description: 'Max results')
+    ⍝@     (name: 'offset'  in: 'query'  required: 0  schema: (type: 'integer' ⋄ default: 0)          description: 'Pagination offset')
+    ⍝@   )
+    ⍝@   responses:   (
+    ⍝@     200: (description: 'Matching items'  schema: (type: 'array' ⋄ items: 'Item'))
+    ⍝@     400: (description: 'Missing query'   schema: 'Error')
+    ⍝@   )
+    ⍝@ )
+    ∇ result←searchItems req;q;limit;offset
+      :Access Public
+      q←req.QueryParams ⎕VGET ⊂'q' ''
+      limit←req.QueryParams ⎕VGET ⊂'limit' 20
+      offset←req.QueryParams ⎕VGET ⊂'offset' 0
+      result←(query: q  results: 'mock' 'data'  total: 2)
+    ∇
+
+
+    ⍝ ─────────────────────────── meta ────────────────────────────────────────
+
+    ⍝@ app.Get(path: '/openapi.json'  summary: 'OpenAPI specification'  tags: ,'meta')
+    ∇ result←getOpenAPISpec req
+      :Access Public
+      result←app.GenerateOpenAPISpec
+    ∇
+
+:EndClass

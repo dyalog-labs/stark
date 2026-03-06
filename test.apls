@@ -1,0 +1,172 @@
+#!/usr/bin/dyalogscript
+
+⎕IO←1
+⎕SE.(⍎⊃2⎕FIX'/StartupSession.aplf',⍨2⎕NQ#'GetEnvironment' 'DYALOG')
+
+⎕SE.Link.Import '#' './APLSource'
+
+⍝ ── Test harness ───────────────────────────────────────────────────────
+pass←fail←0
+
+Assert←{
+    ⍺←'assertion'
+    ⍵:pass+←1
+    fail+←1
+    ⎕←'  FAIL: ',⍺
+    0
+}
+
+Section←{⎕←'' ⋄ ⎕←'── ',⍵,' ',((60-≢⍵)⍴'─')}
+
+⍝ ── 1. Router construction & route registration ───────────────────────
+Section 'Route Registration'
+
+router←⎕NEW #.Router
+handlers←⎕NS ''
+handlers.Ping←{'pong'}
+handlers.GetUser←{(id: ⍵.PathParams.id)}
+handlers.CreateUser←{(created: 1)}
+router.Handlers←handlers
+
+'/ping'        router.Get  'Ping'
+'/users/{id}'  router.Get  'GetUser'
+'/users'       router.Post 'CreateUser'
+
+routes←router.Routes
+'3 routes registered' Assert 3=≢routes
+'route 1 is GET'      Assert 'GET'≡(⊃routes).method
+'route 1 pattern'     Assert '/ping'≡(⊃routes).pattern
+'route 1 handler'     Assert 'Ping'≡(⊃routes).handler
+'route 2 is GET'      Assert 'GET'≡(2⊃routes).method
+'route 3 is POST'     Assert 'POST'≡(3⊃routes).method
+
+⍝ ── 2. Registration with metadata ─────────────────────────────────────
+Section 'Metadata Registration'
+
+router2←⎕NEW #.Router
+router2.Handlers←handlers
+opts←(summary: 'Create a user' ⋄ tags: 'users')
+'/users' router2.Post ('CreateUser' opts)
+
+r←⊃router2.Routes
+'options stored'    Assert 9≤⎕NC'r.options'
+'summary in opts'   Assert 'Create a user'≡r.options.summary
+'tags in opts'      Assert 'users'≡r.options.tags
+
+⍝ ── 3. Path matching ──────────────────────────────────────────────────
+Section 'Path Matching'
+
+MockReq←{
+    r←⎕NS ''
+    r.Method←⍺
+    r.Endpoint←⍵
+    r.Payload←⎕NS ''
+    r.QueryParams←0 2⍴''
+    r.Headers←⎕NS ''
+    r.StatusCode←200
+    r.Fail←{⍵}
+    r
+}
+
+result←router._Dispatch ('GET' MockReq '/ping')
+'GET /ping returns pong' Assert 'pong'≡result
+
+result←router._Dispatch ('GET' MockReq '/users/42')
+'GET /users/42 id' Assert '42'≡result.id
+
+result←router._Dispatch ('POST' MockReq '/users')
+'POST /users created' Assert 1≡result.created
+
+result←router._Dispatch ('GET' MockReq '/nonexistent')
+'404 detail' Assert 'Not Found'≡result.detail
+
+⍝ ── 4. Case-insensitive method matching ───────────────────────────────
+Section 'Case Insensitive Methods'
+
+result←router._Dispatch ('get' MockReq '/ping')
+'lowercase get works' Assert 'pong'≡result
+
+⍝ ── 5. Multi-segment path params ──────────────────────────────────────
+Section 'Multi-Segment Params'
+
+router3←⎕NEW #.Router
+router3.Handlers←⎕NS ''
+router3.Handlers.GetInvoice←{(cust: ⍵.PathParams.cust_id ⋄ inv: ⍵.PathParams.inv_id)}
+'/customer/{cust_id}/invoice/{inv_id}' router3.Get 'GetInvoice'
+
+result←router3._Dispatch ('GET' MockReq '/customer/42/invoice/99')
+'multi param cust' Assert '42'≡result.cust
+'multi param inv'  Assert '99'≡result.inv
+
+⍝ ── 6. ExampleApp construction ────────────────────────────────────────
+Section 'ExampleApp'
+
+app←⎕NEW #.ExampleApp
+r←app.GetRouter
+'app has routes' Assert 0<≢r.Routes
+⎕←'  ExampleApp created with ',(⍕≢r.Routes),' routes'
+
+⍝ ── 7. Integration: actual Jarvis server ─────────────────────────────
+Section 'Integration (Jarvis)'
+
+port←8899
+app.Start port
+⎕DL 1
+
+base←'http://localhost:',⍕port
+
+⍝ GET /
+r←#.HttpCommand.Get (base,'/')
+'GET / status 200'    Assert 200=r.HttpStatus
+'GET / has status ok' Assert ∨/'ok'⍷r.Data
+⎕←'  GET / → ',⍕r.HttpStatus
+
+⍝ GET /items
+r←#.HttpCommand.Get (base,'/items')
+'GET /items 200'      Assert 200=r.HttpStatus
+⎕←'  GET /items → ',⍕r.HttpStatus
+
+⍝ GET /items/1
+r←#.HttpCommand.Get (base,'/items/1')
+'GET /items/1 200'    Assert 200=r.HttpStatus
+'GET /items/1 name'   Assert ∨/'Dyalog APL'⍷r.Data
+⎕←'  GET /items/1 → ',⍕r.HttpStatus
+
+⍝ GET /items/999 (not found)
+r←#.HttpCommand.Get (base,'/items/999')
+'GET /items/999 404'  Assert 404=r.HttpStatus
+⎕←'  GET /items/999 → ',⍕r.HttpStatus
+
+⍝ POST /items
+r←#.HttpCommand.Do 'POST' (base,'/items') '{"name":"Test Item","price":42}'
+'POST /items status'  Assert r.HttpStatus∊200 201
+'POST /items name'    Assert ∨/'Test Item'⍷r.Data
+⎕←'  POST /items → ',⍕r.HttpStatus
+
+⍝ GET /search?q=hello
+r←#.HttpCommand.Get (base,'/search?q=hello')
+'GET /search 200'     Assert 200=r.HttpStatus
+'GET /search query'   Assert ∨/'hello'⍷r.Data
+⎕←'  GET /search?q=hello → ',⍕r.HttpStatus
+
+⍝ GET /customer/42/invoice/99
+r←#.HttpCommand.Get (base,'/customer/42/invoice/99')
+'GET invoice 200'     Assert 200=r.HttpStatus
+'GET invoice cust'    Assert ∨/'42'⍷r.Data
+'GET invoice inv'     Assert ∨/'99'⍷r.Data
+⎕←'  GET /customer/42/invoice/99 → ',⍕r.HttpStatus
+
+⍝ 404 on unknown route
+r←#.HttpCommand.Get (base,'/nonexistent')
+'unknown route 404'   Assert 404=r.HttpStatus
+⎕←'  GET /nonexistent → ',⍕r.HttpStatus
+
+app.Stop
+
+⍝ ── Summary ───────────────────────────────────────────────────────────
+⎕←''
+⎕←'══════════════════════════════════════════'
+⎕←'  Passed: ',⍕pass
+⎕←'  Failed: ',⍕fail
+⎕←'══════════════════════════════════════════'
+:If fail>0 ⋄ ⎕OFF 1 ⋄ :EndIf

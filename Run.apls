@@ -1,0 +1,17 @@
+#!/usr/bin/dyalogscript
+
+⎕IO←1
+⎕SE.(⍎⊃2⎕FIX'/StartupSession.aplf',⍨2⎕NQ#'GetEnvironment' 'DYALOG')
+
+⎕SE.Link.Import '#' './APLSource'
+
+port←8080
+app←⎕NEW #.ExampleApp
+app.Start port
+⎕←'ExampleApp running on port ',⍕port
+⎕←'Press Ctrl+C to stop'
+
+⍝ Keep the script alive
+⍝ :While 1
+⍝     ⎕DL 1
+⍝ :EndWhile

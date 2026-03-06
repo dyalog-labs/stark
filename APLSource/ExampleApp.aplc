@@ -1,103 +1,126 @@
 :Class ExampleApp
-⍝ Python / FastAPI equivalent:
+⍝ Example application using the Router class.
 ⍝
-⍝   from fastapi import FastAPI
-⍝   app = FastAPI()
-⍝
-⍝   @app.get("/")
-⍝   def root():
-⍝       return {"status": "ok"}
-⍝
-⍝   @app.get("/items/{item_id}")
-⍝   def getItemById(item_id: int):
-⍝       return {"item_id": item_id}
-    :field private routes←⍬ 
-    :field private testVal←'test'
-    :field private app
-    :field private db
-    
+⍝   app←⎕NEW ExampleApp
+⍝   app.Start 8080
+⍝   app.Stop
+
+    :Field Private router
+    :Field Private db
+
     ∇ Make
-        :Access Public
-        :implements constructor
-        db←(
-          customers: (
-            (
-              invoices: (1/(
-                id: 12
-                products: ('Dyalog APL' 'Golayd LPA')
-                amount: 500
-                currency: 'USD'
-              ))
-            )
-          )
-        )
-        app←⎕NEW ##.FastJarvis
-        app.Handlers←⎕THIS
-        app.Add¨{m←{∨/'⍝@'⍷⍵}¨⍵⋄{(⊂({⍵↑⍨¯1+⍵⍳' '}(⊃⌽⍵)↓⍨'←'⍳⍨⊃⌽⍵)),⍨⊂(⊃⍵)↓⍨2+'⍝@ '(⍸⍷)⊃⍵}¨⍵⊆⍨∊∨/0 ¯1⌽¨⊂m}⎕SRC (⊃∊⎕CLASS ⎕THIS)
+      :Access Public
+      :Implements Constructor
+
+      ⍝ ── Sample data ──────────────────────────────────────────────────────
+      db←⎕NS ''
+      db.items←⍬
+      db.items,←⊂(id: 1 ⋄ name: 'Dyalog APL' ⋄ price: 0 ⋄ tags: 'language' 'array')
+      db.items,←⊂(id: 2 ⋄ name: 'SharpPlot'  ⋄ price: 0 ⋄ tags: 'graphics' 'charting')
+
+      ⍝ ── Router setup ─────────────────────────────────────────────────────
+      router←⎕NEW ##.Router
+      router.Handlers←⎕THIS
+
+      '/'                              router.Get    'Root'
+      '/items'                         router.Get    'ListItems'
+      '/items/{id}'                    router.Get    'GetItem'
+      '/items'                         router.Post   'CreateItem'
+      '/items/{id}'                    router.Put    'UpdateItem'
+      '/items/{id}'                    router.Delete 'DeleteItem'
+      '/search'                        router.Get    'SearchItems'
+      '/customer/{cust_id}/invoice/{inv_id}' router.Get 'GetInvoice'
     ∇
 
     ∇ Start port
-        :Access Public
-        app.Start 8080
-        app._jarvis.Debug←1
+      :Access Public
+      router.Start port
     ∇
 
     ∇ Stop
-        :Access Public
-        app._jarvis.Stop
-    ∇
-     
-    
-    ⍝@ GET /
-    ∇ result←root req
-      :access public
-      result←(
-        testVal: testVal
-        status: 'ok'
-      )
+      :Access Public
+      router.Stop
     ∇
 
-    ⍝@ GET /items/{item_id}
-    ∇ result←getItemById req
-      :access public
-      result←(
-        item_id: req.PathParams.item_id
-      )
-    ∇ 
+    ∇ r←GetRouter
+      :Access Public
+      r←router
+    ∇
 
-    ⍝@ POST /items/{item_id}
-    ∇ result←createItem req;body
-      :access public
+    ⍝ ── Handlers ───────────────────────────────────────────────────────────
+
+    ∇ result←Root req
+      :Access Public
+      result←(status: 'ok')
+    ∇
+
+    ∇ result←ListItems req
+      :Access Public
+      result←(items: db.items ⋄ total: ≢db.items)
+    ∇
+
+    ∇ result←GetItem req;id;matches
+      :Access Public
+      id←⊃2⊃⎕VFI req.PathParams.id
+      matches←(db.items.id=id)/db.items
+      :If 0=≢matches
+          req.Fail 404
+          result←(detail: 'Item not found')
+      :Else
+          result←⊃matches
+      :EndIf
+    ∇
+
+    ∇ result←CreateItem req;body;item
+      :Access Public
       body←req.Payload
-      result←(
-        item_id: req.PathParams.item_id
-        name: body.name
-        price: body.price
-        created: 1
-      )
-    ∇
-    
-    ⍝@ GET /search
-    ∇ result←searchItems req
-      :access public
-      result←(
-        query: req.QueryParams ⎕VGET ⊂(,'q') '' ⍝ e.g. GET /search?q=apple
-        results: 'mock' 'data'      ⍝ real app would query a database here
-      )
+      item←⎕NS ''
+      item.id←1+⌈/0,db.items.id
+      item.name←body.name
+      item.price←body.price
+      item.tags←⍬
+      db.items,←⊂item
+      req.StatusCode←201
+      result←item
     ∇
 
-    ⍝@ GET /customer/{cust_id}/invoice/{inv_id}
-    ∇ result←getCustomerInvoice req;cust
-      :access public
-      ⍝ Do stuff
-      ⍝ Get the customer object
-      cust←db.customers[⊃2⊃⎕VFI req.PathParams.cust_id]
-      result←cust.invoices[⊃2⊃⎕VFI req.PathParams.inv_id]
-
-      ⍝ result←(
-      ⍝   customer: req.PathParams.cust_id
-      ⍝   invoice: req.PathParams.inv_id
-      ⍝ )
+    ∇ result←UpdateItem req;id;idx;body
+      :Access Public
+      id←⊃2⊃⎕VFI req.PathParams.id
+      idx←db.items.id⍳id
+      :If idx>≢db.items
+          req.Fail 404
+          result←(detail: 'Item not found')
+      :Else
+          body←req.Payload
+          (⊃db.items[idx]).name←body.name
+          (⊃db.items[idx]).price←body.price
+          result←⊃db.items[idx]
+      :EndIf
     ∇
+
+    ∇ result←DeleteItem req;id;mask
+      :Access Public
+      id←⊃2⊃⎕VFI req.PathParams.id
+      mask←db.items.id≠id
+      :If mask∧.=1
+          req.Fail 404
+          result←(detail: 'Item not found')
+      :Else
+          db.items←mask/db.items
+          result←(deleted: 1 ⋄ id: id)
+      :EndIf
+    ∇
+
+    ∇ result←SearchItems req;q
+      :Access Public
+      q←req.QueryParams ⎕VGET ⊂(,'q') ''
+      result←(query: q ⋄ results: 'mock' 'data' ⋄ total: 2)
+    ∇
+
+    ∇ result←GetInvoice req
+      :Access Public
+      result←(customer: req.PathParams.cust_id ⋄ invoice: req.PathParams.inv_id)
+    ∇
+
 :EndClass
-
