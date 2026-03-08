@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: dyalog/dyalog:20.0
+      options: --user root
 
     steps:
       - name: Install Node.js
