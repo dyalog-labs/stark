@@ -1,0 +1,7 @@
+ r←Test_DispatchSimpleGet dummy;router;req;result
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/items')
+ result←router._Dispatch req
+ r←2=result.total

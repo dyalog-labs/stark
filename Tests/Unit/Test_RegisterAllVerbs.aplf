@@ -1,0 +1,10 @@
+ r←Test_RegisterAllVerbs dummy;router;methods
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/a' router.Get 'ListItems'
+ '/b' router.Post 'CreateItem'
+ '/c' router.Put 'UpdateItem'
+ '/d' router.Delete 'DeleteItem'
+ '/e' router.Patch 'UpdateItem'
+ methods←router.Routes.method
+ r←methods≡'GET' 'POST' 'PUT' 'DELETE' 'PATCH'

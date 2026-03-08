@@ -1,0 +1,6 @@
+ r←Test_RoutePattern dummy;router;route
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items/{id}' router.Get 'GetItem'
+ route←⊃router.Routes
+ r←'/items/{id}'≡route.pattern

@@ -1,0 +1,8 @@
+ r←Test_OpenAPIEndpoint dummy;resp;data
+ resp←#.HttpCommand.Get(BaseURL,'/openapi.json')
+ :If 200≠resp.HttpStatus
+     r←0
+ :Else
+     data←⎕JSON resp.Data
+     r←'3.0.3'≡data.openapi
+ :EndIf

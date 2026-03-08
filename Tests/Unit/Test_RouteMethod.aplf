@@ -1,0 +1,6 @@
+ r←Test_RouteMethod dummy;router;route
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Post 'CreateItem'
+ route←⊃router.Routes
+ r←'POST'≡route.method

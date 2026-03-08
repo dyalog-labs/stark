@@ -1,0 +1,34 @@
+:Namespace MockHandlers
+⍝ Handler functions used by unit tests.
+
+    ∇ result←ListItems req
+      result←(items: 'a' 'b' ⋄ total: 2)
+    ∇
+
+    ∇ result←GetItem req
+      result←(id: req.PathParams.id)
+    ∇
+
+    ∇ result←CreateItem req
+      req.StatusCode←201
+      result←req.Payload
+    ∇
+
+    ∇ result←UpdateItem req
+      result←(updated: 1)
+    ∇
+
+    ∇ result←DeleteItem req
+      result←(deleted: 1)
+    ∇
+
+    ∇ result←SearchItems req;q
+      q←req.QueryParams ⎕VGET ⊂(,'q') ''
+      result←(query: q)
+    ∇
+
+    ∇ result←GetInvoice req
+      result←(cust: req.PathParams.cust_id ⋄ inv: req.PathParams.inv_id)
+    ∇
+
+:EndNamespace

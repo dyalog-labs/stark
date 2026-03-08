@@ -1,0 +1,10 @@
+ r←Test_DuplicateExactRoute dummy;router
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ :Trap 11
+     '/items' router.Get 'ListItems'
+     r←0
+ :Else
+     r←1
+ :EndTrap

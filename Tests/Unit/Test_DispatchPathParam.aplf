@@ -1,0 +1,7 @@
+ r←Test_DispatchPathParam dummy;router;req;result
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items/{id}' router.Get 'GetItem'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/items/42')
+ result←router._Dispatch req
+ r←'42'≡result.id

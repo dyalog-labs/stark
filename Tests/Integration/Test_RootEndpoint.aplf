@@ -1,0 +1,4 @@
+ r←Test_RootEndpoint dummy;resp;data
+ resp←#.HttpCommand.Get(BaseURL,'/')
+ data←⎕JSON resp.Data
+ r←(200=resp.HttpStatus)∧('ok'≡data.status)

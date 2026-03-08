@@ -1,0 +1,31 @@
+:Class MockRequest
+⍝ Lightweight mock of Jarvis Request for unit testing Stark's _Dispatch.
+
+    :Field Public Instance Method←''
+    :Field Public Instance Endpoint←''
+    :Field Public Instance QueryParams←0 2⍴0
+    :Field Public Instance Payload←''
+    :Field Public Instance Body←''
+    :Field Public Instance PathParams
+    :Field Public Instance StatusCode←200
+    :Field Public Instance Response
+
+    ∇ make args
+      :Access Public
+      :Implements Constructor
+      (Method Endpoint)←args
+      Payload←⎕NS ''
+      PathParams←⎕NS ''
+      Response←⎕NS ''
+      Response.(Status StatusText Payload)←0 'OK' ''
+      Response.Headers←0 2⍴'' ''
+    ∇
+
+    ∇ {r}←{message}Fail status
+      :Access Public
+      :If r←0≠1↑status
+          Response.Status←status
+      :EndIf
+    ∇
+
+:EndClass

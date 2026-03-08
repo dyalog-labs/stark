@@ -1,0 +1,28 @@
+:Namespace RunHelper
+⍝ Minimal test runner. Discovers Test_* functions in a namespace and runs them.
+⍝ Each test is a niladic tradfn returning 1 (pass) or 0 (fail).
+⍝ Returns (passed failed) pair.
+
+    ∇ r←Run ns;names;fn;passed;failed;result
+      passed←failed←0
+      names←ns.⎕NL ¯3
+      names←(names/⍨'Test_'∘{⍺≡(≢⍺)↑⍵}¨names)
+      :For fn :In names
+          :Trap 0
+              result←(ns⍎fn)⍬
+              :If result
+                  passed+←1
+                  ⎕←'  PASS: ',fn
+              :Else
+                  failed+←1
+                  ⎕←'  FAIL: ',fn
+              :EndIf
+          :Else
+              failed+←1
+              ⎕←'  ERROR: ',fn,' — ',⎕DMX.EM
+          :EndTrap
+      :EndFor
+      r←passed failed
+    ∇
+
+:EndNamespace

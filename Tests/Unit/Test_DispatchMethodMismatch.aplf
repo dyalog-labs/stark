@@ -1,0 +1,7 @@
+ r←Test_DispatchMethodMismatch dummy;router;req;result
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ req←⎕NEW #.Mocks.MockRequest ('POST' '/items')
+ result←router._Dispatch req
+ r←404=req.Response.Status

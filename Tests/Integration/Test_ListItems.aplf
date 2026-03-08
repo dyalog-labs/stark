@@ -1,0 +1,4 @@
+ r←Test_ListItems dummy;resp;data
+ resp←#.HttpCommand.Get(BaseURL,'/items')
+ data←⎕JSON resp.Data
+ r←(200=resp.HttpStatus)∧(2≤data.total)

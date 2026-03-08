@@ -1,0 +1,9 @@
+ r←Test_InvalidRarg dummy;router
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ :Trap 11
+     '/items' router.Get (1 2 3)
+     r←0
+ :Else
+     r←1
+ :EndTrap

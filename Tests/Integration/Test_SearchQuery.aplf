@@ -1,0 +1,4 @@
+ r←Test_SearchQuery dummy;resp;data
+ resp←#.HttpCommand.Get(BaseURL,'/search?q=dyalog')
+ data←⎕JSON resp.Data
+ r←(200=resp.HttpStatus)∧('dyalog'≡data.query)

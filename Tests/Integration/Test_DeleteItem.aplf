@@ -1,0 +1,3 @@
+ r←Test_DeleteItem dummy;resp
+ resp←#.HttpCommand.Do 'DELETE' (BaseURL,'/items/2')
+ r←200=resp.HttpStatus

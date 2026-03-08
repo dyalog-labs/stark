@@ -1,0 +1,5 @@
+ r←Test_RegisterSingleRoute dummy;router
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ r←1=≢router.Routes

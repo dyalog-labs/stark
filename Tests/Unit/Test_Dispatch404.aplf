@@ -1,0 +1,7 @@
+ r←Test_Dispatch404 dummy;router;req;result
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/nonexistent')
+ result←router._Dispatch req
+ r←('Not Found'≡result.detail)∧(404=req.Response.Status)

@@ -1,0 +1,4 @@
+ r←Test_MultiplePathParams dummy;resp;data
+ resp←#.HttpCommand.Get(BaseURL,'/customer/C1/invoice/INV2')
+ data←⎕JSON resp.Data
+ r←(200=resp.HttpStatus)∧('C1'≡data.customer)∧('INV2'≡data.invoice)

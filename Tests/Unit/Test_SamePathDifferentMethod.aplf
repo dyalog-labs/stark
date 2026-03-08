@@ -1,0 +1,6 @@
+ r←Test_SamePathDifferentMethod dummy;router
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ '/items' router.Post 'CreateItem'
+ r←2=≢router.Routes

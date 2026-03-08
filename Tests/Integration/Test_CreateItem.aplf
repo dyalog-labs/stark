@@ -1,0 +1,5 @@
+ r←Test_CreateItem dummy;resp;data;body
+ body←⎕JSON (name: 'NewItem' ⋄ price: 42)
+ resp←#.HttpCommand.Do 'POST' (BaseURL,'/items') body 'application/json'
+ data←⎕JSON resp.Data
+ r←(resp.HttpStatus∊200 201)∧('NewItem'≡data.name)

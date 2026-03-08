@@ -1,0 +1,6 @@
+ r←Test_RegisterWithOptions dummy;router;route
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get ('ListItems' (summary: 'List all items'))
+ route←⊃router.Routes
+ r←('ListItems'≡route.handler)∧('List all items'≡route.options.summary)

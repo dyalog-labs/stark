@@ -1,0 +1,5 @@
+ r←Test_UpdateItem dummy;resp;data;body
+ body←⎕JSON (name: 'Updated' ⋄ price: 100)
+ resp←#.HttpCommand.Do 'PUT' (BaseURL,'/items/1') body 'application/json'
+ data←⎕JSON resp.Data
+ r←(200=resp.HttpStatus)∧('Updated'≡data.name)

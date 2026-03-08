@@ -1,0 +1,4 @@
+ r←Test_GetItemById dummy;resp;data
+ resp←#.HttpCommand.Get(BaseURL,'/items/1')
+ data←⎕JSON resp.Data
+ r←(200=resp.HttpStatus)∧('Dyalog APL'≡data.name)

@@ -1,0 +1,7 @@
+ r←Test_EmptyQueryParams dummy;router;req;result
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/search' router.Get 'SearchItems'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/search')
+ result←router._Dispatch req
+ r←''≡result.query

@@ -1,0 +1,6 @@
+ r←Test_OpenAPIVersion dummy;router;spec
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ spec←router.OpenAPI
+ r←'3.0.3'≡spec.openapi

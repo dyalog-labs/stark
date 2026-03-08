@@ -1,0 +1,7 @@
+ r←Test_DispatchMultiplePathParams dummy;router;req;result
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/customer/{cust_id}/invoice/{inv_id}' router.Get 'GetInvoice'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/customer/C100/invoice/INV200')
+ result←router._Dispatch req
+ r←('C100'≡result.cust)∧('INV200'≡result.inv)

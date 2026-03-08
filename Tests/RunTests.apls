@@ -1,0 +1,52 @@
+#!/usr/bin/dyalogscript
+
+⎕IO←1
+⎕SE.(⍎⊃2⎕FIX'/StartupSession.aplf',⍨2⎕NQ#'GetEnvironment' 'DYALOG')
+
+⍝ Load framework
+⎕SE.Link.Import '#' '../APLSource'
+
+⍝ Load HttpCommand and mocks
+⎕SE.Link.Import '#' './HttpCommand.aplc'
+⎕SE.Link.Import '#.Mocks' './Mocks'
+
+⍝ Load test runner
+⎕SE.Link.Import '#' './RunHelper.apln'
+
+⍝ ── Unit Tests ──
+⎕←'=== Unit Tests ==='
+⎕SE.Link.Import '#.Unit' './Unit'
+(uPass uFail)←#.RunHelper.Run #.Unit
+
+⍝ ── Integration Tests ──
+⎕←''
+⎕←'=== Integration Tests ==='
+⎕SE.Link.Import '#' '../Examples'
+port←19876
+app←⎕NEW #.ExampleApp
+router←app.GetStark
+router.ThreadMode←'DEBUG'
+app.Start port
+⎕DL 1
+
+⎕SE.Link.Import '#.Integration' './Integration'
+#.Integration.BaseURL←'http://localhost:',(⍕port)
+(iPass iFail)←#.RunHelper.Run #.Integration
+
+:Trap 0
+    app.Stop
+:EndTrap
+
+⍝ ── Summary ──
+⎕←''
+⎕←'=== Summary ==='
+⎕←'Unit:        ',(⍕uPass),' passed, ',(⍕uFail),' failed'
+⎕←'Integration: ',(⍕iPass),' passed, ',(⍕iFail),' failed'
+
+:If 0<uFail+iFail
+    ⎕←'FAILED'
+    ⎕OFF 1
+:Else
+    ⎕←'ALL PASSED'
+    ⎕OFF 0
+:EndIf

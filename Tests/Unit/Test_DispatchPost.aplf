@@ -1,0 +1,8 @@
+ r←Test_DispatchPost dummy;router;req;result
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Post 'CreateItem'
+ req←⎕NEW #.Mocks.MockRequest ('POST' '/items')
+ req.Payload←(name: 'Test' ⋄ price: 99)
+ result←router._Dispatch req
+ r←'Test'≡result.name

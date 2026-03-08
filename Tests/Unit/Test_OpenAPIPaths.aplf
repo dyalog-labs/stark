@@ -1,0 +1,7 @@
+ r←Test_OpenAPIPaths dummy;router;spec
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ '/items/{id}' router.Get 'GetItem'
+ spec←router.OpenAPI
+ r←0<≢spec.paths.⎕NL ¯9

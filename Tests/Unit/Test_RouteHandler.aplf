@@ -1,0 +1,6 @@
+ r←Test_RouteHandler dummy;router;route
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ route←⊃router.Routes
+ r←'ListItems'≡route.handler

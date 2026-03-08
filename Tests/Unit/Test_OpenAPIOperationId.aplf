@@ -1,0 +1,8 @@
+ r←Test_OpenAPIOperationId dummy;router;spec;pathNS;op
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ spec←router.OpenAPI
+ pathNS←spec.paths⍎⊃spec.paths.⎕NL ¯9
+ op←pathNS⍎⊃pathNS.⎕NL ¯9
+ r←'ListItems'≡op.operationId

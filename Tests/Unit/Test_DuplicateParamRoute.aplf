@@ -1,0 +1,10 @@
+ r←Test_DuplicateParamRoute dummy;router
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items/{id}' router.Get 'GetItem'
+ :Trap 11
+     '/items/{item_id}' router.Get 'GetItem'
+     r←0
+ :Else
+     r←1
+ :EndTrap
