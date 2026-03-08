@@ -67,9 +67,13 @@
       :EndIf
       ⍝ Check for duplicate routes: normalize {param} segments so {id} and {user_id} match
       norm←_NormalizePath path
-      existing←((⎕C¨_routes.method)∊⊂⎕C method)/_routes
-      :If (⊂norm)∊_NormalizePath¨existing.pattern
-          ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Duplicate route: ',method,' ',path,' conflicts with an existing registration'))
+      :If 0<≢_routes
+          existing←((⎕C¨_routes.method)∊⊂⎕C method)/_routes
+          :If 0<≢existing
+              :If (⊂norm)∊_NormalizePath¨existing.pattern
+                  ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Duplicate route: ',method,' ',path,' conflicts with an existing registration'))
+              :EndIf
+          :EndIf
       :EndIf
       r←(
         method: method
