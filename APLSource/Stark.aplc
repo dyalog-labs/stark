@@ -229,7 +229,7 @@
       code.Put←{inst._Dispatch ⍵}
       code.Delete←{inst._Dispatch ⍵}
       code.Patch←{inst._Dispatch ⍵}
-      j←⎕NEW #.Jarvis
+      j←⎕NEW (⊃⊃⎕CLASS ⎕THIS).##.Jarvis
       j.Port←port
       j.Paradigm←'REST'
       j.CodeLocation←code
