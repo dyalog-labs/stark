@@ -13,7 +13,9 @@ jobs:
       image: dyalog/dyalog:20.0
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        run: |
+          git clone --depth 1 --branch ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}} https://github.com/$GITHUB_REPOSITORY.git .
 
       - name: Run tests
         run: cd Tests && dyalogscript RunTests.apls
