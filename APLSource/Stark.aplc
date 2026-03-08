@@ -149,7 +149,7 @@
           :If '_'=⊃r.handler ⋄ :Continue ⋄ :EndIf   ⍝ skip internal routes
 
           ⍝ Get or create path object
-          pathKey←_Mangler.pattern
+          pathKey←_Mangle r.pattern
           :If 0=paths.⎕NC⊂pathKey
               paths ⎕VSET ⊂pathKey ()
           :EndIf
@@ -171,7 +171,7 @@
           segs←'/'(≠⊆⊢)r.pattern
           varMask←'{'=⊃¨segs
           :For param :In {1↓¯1↓⍵}¨varMask/segs
-              :If (9=⎕NC'opts')∧(9=opts.⎕NC'params')∧(9=opts.params.⎕NC⊂param)
+              :If 9=⎕NC'opts' ⋄ :AndIf 9=opts.⎕NC'params' ⋄ :AndIf 9=opts.params.⎕NC⊂param
                   pNS←(name: param ⋄ in: 'path' ⋄ required: (⊂'true') ⋄ schema: (opts.params⍎param))
               :Else
                   pNS←(name: param ⋄ in: 'path' ⋄ required: (⊂'true') ⋄ schema: (type: 'string'))
