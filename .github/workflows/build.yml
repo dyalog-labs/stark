@@ -20,6 +20,9 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      - name: Activate Tatin and Cider
+        run: dyalogscript .github/activate.apls
+
       - name: Build package
         run: dyalogscript Build.apls
 

@@ -10,7 +10,7 @@
   license: "MIT",
   lx: "",
   maintainer: "",
-  minimumAplVersion: "18.0",
+  minimumAplVersion: "20.0",
   ml: 1,
   name: "Stark",
   os_lin: 1,
