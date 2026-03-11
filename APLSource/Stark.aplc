@@ -275,7 +275,7 @@
 
     ∇ r←Routes
       :Access Public Instance
-      r←_routes
+      r←('_'≠⊃¨_routes.handler)/_routes
     ∇
 
 :EndClass
