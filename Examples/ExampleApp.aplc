@@ -58,7 +58,6 @@
     )
     ∇ result←Root req
       :Access Public
-      ÷0
       result←(status:'ok')
     ∇
 
