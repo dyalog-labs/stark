@@ -14,9 +14,9 @@ jobs:
       options: --user root
 
     steps:
-      - name: Install Node.js
+      - name: Install Dependencies
         run: |
-          apt-get update && apt-get install -y nodejs
+          apt-get update && apt-get install -y nodejs zip unzip
 
       - uses: actions/checkout@v4
 
