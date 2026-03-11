@@ -1,0 +1,12 @@
+#!/usr/bin/dyalogscript DYALOG_INITSESSION=1
+⎕←'BUILD!'
+⎕PW←500
+⎕SE.(⍎⊃2⎕FIX'/StartupSession.aplf',⍨2⎕NQ#'GetEnvironment' 'DYALOG')
+⎕ML ⎕IO←1 0
+⎕←⎕SE.UCMD 'ureset'
+⎕←⎕SE.UCMD 'Tatin.Version'
+parms←⎕ns ''
+parms.(projectPath targetPath version dependencyFolder)←'.' 'Dist' '' 'packages'
+⎕SE.Tatin.BuildPackage parms
+⎕←'Built!'
+⎕off 0

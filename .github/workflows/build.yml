@@ -1,0 +1,30 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: dyalog/dyalog:20.0
+      options: --user root
+
+    steps:
+      - name: Install Node.js
+        run: |
+          apt-get update && apt-get install -y nodejs
+
+      - uses: actions/checkout@v4
+
+      - name: Build package
+        run: dyalogscript Build.apls
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FastJarvis
+          path: Dist/*.zip

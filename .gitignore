@@ -1,1 +1,14 @@
 site/
+
+aplcore
+/Dist/
+CONTINUE.dws
+conga.crash
+/packages/*
+/TestResults/
+!/packages/apl-dependencies.txt
+!/packages/apl-buildlist.json
+!/packages/NOTICE.md
+/tatin-dependencies_dev/*
+!/tatin-dependencies_dev/apl-dependencies.txt
+!/tatin-dependencies_dev/apl-buildlist.json
