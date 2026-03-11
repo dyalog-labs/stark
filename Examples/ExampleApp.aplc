@@ -11,28 +11,28 @@
     ∇ Make
       :Access Public
       :Implements Constructor
-
+     
       ⍝ Sample data
       db←(
-        items: (
-          (id: 1 ⋄ name: 'Dyalog APL' ⋄ price: 0 ⋄ tags: 'language' 'array')
-          (id: 2 ⋄ name: 'SharpPlot'  ⋄ price: 0 ⋄ tags: 'graphics' 'charting')
-        )
+          items:(
+              (id:1 ⋄ name:'Dyalog APL' ⋄ price:0 ⋄ tags:'language' 'array')
+              (id:2 ⋄ name:'SharpPlot' ⋄ price:0 ⋄ tags:'graphics' 'charting')
+          )
       )
-
+     
       ⍝ Stark setup
       router←⎕NEW ##.Stark
       router.Handlers←⎕THIS
-      router.Info←(title: 'Example Items API' ⋄ version: '1.0.0')
-
-      '/' router.Get ('Root' RootSchema)
-      '/items' router.Get ('ListItems' ListItemsSchema)
-      '/items/{id}' router.Get ('GetItem' GetItemSchema)
-      '/items' router.Post ('CreateItem' CreateItemSchema)
-      '/items/{id}' router.Put ('UpdateItem' UpdateItemSchema)
-      '/items/{id}' router.Delete ('DeleteItem' )
-      '/search' router.Get ('SearchItems' SearchItemsSchema)
-      '/customer/{cust_id}/invoice/{inv_id}' router.Get ('GetInvoice' GetInvoiceSchema)
+      router.Info←(title:'Example Items API' ⋄ version:'1.0.0')
+     
+      '/'router.Get('Root'RootSchema)
+      '/items'router.Get('ListItems'ListItemsSchema)
+      '/items/{id}'router.Get('GetItem'GetItemSchema)
+      '/items'router.Post('CreateItem'CreateItemSchema)
+      '/items/{id}'router.Put('UpdateItem'UpdateItemSchema)
+      '/items/{id}'router.Delete('DeleteItem')
+      '/search'router.Get('SearchItems'SearchItemsSchema)
+      '/customer/{cust_id}/invoice/{inv_id}'router.Get('GetInvoice'GetInvoiceSchema)
     ∇
 
     ∇ Start port
@@ -53,28 +53,29 @@
     ⍝ Handlers
 
     RootSchema←(
-        summary: 'Health check'
-        tags: ('status'⋄)
+    summary: 'Health check'
+    tags: ('status'⋄)
     )
     ∇ result←Root req
       :Access Public
-      result←(status: 'ok')
+      ÷0
+      result←(status:'ok')
     ∇
 
 
     ListItemsSchema←(
-        summary: 'List all items'
-        tags: ('items'⋄)
+    summary: 'List all items'
+    tags: ('items'⋄)
     )
     ∇ result←ListItems req
       :Access Public
-      result←(items: db.items ⋄ total: ≢db.items)
+      result←(items:db.items ⋄ total:≢db.items)
     ∇
 
 
     GetItemSchema←(
-        summary: 'Get an item by ID'
-        tags: ('items'⋄)
+    summary: 'Get an item by ID'
+    tags: ('items'⋄)
     )
     ∇ result←GetItem req;id;matches
       :Access Public
@@ -82,7 +83,7 @@
       matches←(db.items.id=id)/db.items
       :If 0=≢matches
           req.Fail 404
-          result←(detail: 'Item not found')
+          result←(detail:'Item not found')
       :Else
           result←⊃matches
       :EndIf
@@ -90,23 +91,23 @@
 
 
     CreateItemSchema←(
-        summary: 'Create a new item'
-        tags: ('items'⋄)
-        body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
-            name:  (type: 'string')
-            price: (type: 'number')
-        ))
-        response: (201 (type: 'object' ⋄ properties: (
-            id:    (type: 'integer')
-            name:  (type: 'string')
-            price: (type: 'number')
-            tags:  (type: 'array' ⋄ items: (type: 'string'))
-        )))
+    summary: 'Create a new item'
+    tags: ('items'⋄)
+    body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
+    name:  (type: 'string')
+    price: (type: 'number')
+    ))
+    response: (201 (type: 'object' ⋄ properties: (
+    id:    (type: 'integer')
+    name:  (type: 'string')
+    price: (type: 'number')
+    tags:  (type: 'array' ⋄ items: (type: 'string'))
+    )))
     )
     ∇ result←CreateItem req;body;item
       :Access Public
       body←req.Payload
-      item←⎕NS ''
+      item←⎕NS''
       item.id←1+⌈/0,db.items.id
       item.name←body.name
       item.price←body.price
@@ -118,12 +119,12 @@
 
 
     UpdateItemSchema←(
-        summary: 'Update an item'
-        tags: ('items'⋄)
-        body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
-            name:  (type: 'string')
-            price: (type: 'number')
-        ))
+    summary: 'Update an item'
+    tags: ('items'⋄)
+    body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
+    name:  (type: 'string')
+    price: (type: 'number')
+    ))
     )
     ∇ result←UpdateItem req;id;idx;body
       :Access Public
@@ -131,7 +132,7 @@
       idx←db.items.id⍳id
       :If idx>≢db.items
           req.Fail 404
-          result←(detail: 'Item not found')
+          result←(detail:'Item not found')
       :Else
           body←req.Payload
           (⊃db.items[idx]).name←body.name
@@ -142,8 +143,8 @@
 
 
     DeleteItemSchema←(
-        summary: 'Delete an item'
-        tags: ('items'⋄)
+    summary: 'Delete an item'
+    tags: ('items'⋄)
     )
     ∇ result←DeleteItem req;id;mask
       :Access Public
@@ -151,31 +152,31 @@
       mask←db.items.id≠id
       :If mask∧.=1
           req.Fail 404
-          result←(detail: 'Item not found')
+          result←(detail:'Item not found')
       :Else
           db.items←mask/db.items
-          result←(deleted: 1 ⋄ id: id)
+          result←(deleted:1 ⋄ id:id)
       :EndIf
     ∇
 
     SearchItemsSchema←(
-        summary: 'Search items'
-        tags: ('search'⋄)
+    summary: 'Search items'
+    tags: ('search'⋄)
     )
     ∇ result←SearchItems req;q
       :Access Public
-      q←req.QueryParams ⎕VGET ⊂(,'q') ''
-      result←(query: q ⋄ results: 'mock' 'data' ⋄ total: 2)
+      q←req.QueryParams ⎕VGET⊂(,'q')''
+      result←(query:q ⋄ results:'mock' 'data' ⋄ total:2)
     ∇
 
 
     GetInvoiceSchema←(
-        summary: 'Get a customer invoice'
-        tags: ('invoices'⋄)
+    summary: 'Get a customer invoice'
+    tags: ('invoices'⋄)
     )
     ∇ result←GetInvoice req
       :Access Public
-      result←(customer: req.PathParams.cust_id ⋄ invoice: req.PathParams.inv_id)
+      result←(customer:req.PathParams.cust_id ⋄ invoice:req.PathParams.inv_id)
     ∇
 
 :EndClass

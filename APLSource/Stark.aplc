@@ -13,6 +13,7 @@
     :Field Public  Handlers      ⍝ namespace where handler functions live
     :Field Public  ThreadMode←'' ⍝ DYALOG_JARVIS_THREAD: '' (Jarvis default), 0, 1, 'DEBUG', 'AUTO'
     :Field Public  Info          ⍝ namespace with title, version, description for OpenAPI info
+    :Field Public  Debug←0       ⍝ 0=all errors trapped, 1=stop on error in dispatch, 2=stop before user handler, 4=Jarvis framework debug, 8=Conga event logging, 16=stop before response, 32=Stark framework debug, 64=stop before routing
     :Field Private _routes       ⍝ vector of route descriptor namespaces
     :Field Private _jarvis       ⍝ underlying Jarvis instance
 
@@ -23,6 +24,7 @@
       Handlers←⍬
       _routes←⍬
       _jarvis←⍬
+      '/openapi.json' Get '_OpenAPIHandler'
     ∇
 
     ⍝ Route registration
@@ -90,6 +92,17 @@
     ⍝ Replace {param} segments with a placeholder so structurally identical paths match
     _NormalizePath←{⍵/⍨~+\∊+/¯1 0⌽¨1 ¯1×↓'{}'∘.=⍵}
 
+    ∇ r←{value}DebugLevel level
+    ⍝ monadic: return 1 if level is within Debug (powers of 2)
+    ⍝ dyadic:  return value unless level is within Debug
+      r←∨/((7⍴2)⊤⊃Debug)∨.∧(7⍴2)⊤level
+      :If 0≠⎕NC'value'
+          r←value/⍨~r
+      :EndIf
+    ∇
+
+    stopIf←{1∊⍵:-⎕TRAP←0 'C' '⎕←''Stopped for debugging... (Press Ctrl-Enter)''' ⋄ shy←0}
+
     ⍝ pattern pathMatch path → (matched pathParams)
     pathMatch←{
         patSplit pathSplit←'/'(≠⊆⊢)¨⍺ ⍵
@@ -103,6 +116,7 @@
     ⍝ Route an incoming Jarvis request to the matching handler
     ∇ result←_Dispatch req;routes;r;matched;pp
       :Access Public Instance
+      stopIf DebugLevel 64                          ⍝ stop before routing
       routes←((⎕C¨_routes.method)∊⊂⎕C req.Method)/_routes
       :For r :In routes
           (matched pp)←r.pattern pathMatch req.Endpoint
@@ -112,7 +126,15 @@
               :If '_'=⊃r.handler
                   result←(⍎r.handler)req          ⍝ internal handler (on Stark)
               :Else
-                  result←(Handlers⍎r.handler)req   ⍝ user handler
+                  :If DebugLevel 32
+                      ⎕←'STARK: ',req.Method,' ',req.Endpoint,' → ',r.handler
+                  :EndIf
+                  stopIf DebugLevel 2              ⍝ stop before user handler
+                  :Trap 0 DebugLevel 1             ⍝ disable trap if bit 1 set (stop on error)
+                      result←(Handlers⍎r.handler)req
+                  :Else
+                      ⎕SIGNAL⊂⎕DMX               ⍝ re-signal to let Jarvis return 500
+                  :EndTrap
               :EndIf
               :Return
           :EndIf
@@ -225,7 +247,6 @@
 
     ∇ Start port;code;j
       :Access Public Instance
-      '/openapi.json' Get '_OpenAPIHandler'
       code←⎕NS ''
       code.inst←⎕THIS
       code.Get←{inst._Dispatch ⍵}
@@ -238,6 +259,7 @@
       j.Paradigm←'REST'
       j.CodeLocation←code
       j.RESTFailProcessing←1
+      j.Debug←+/(1 4 8 16)×1=2|⌊Debug÷1 4 8 16   ⍝ forward bits 1,4,8,16; bit 2 is replaced by Stark's bit 64/2
       :If ''≢ThreadMode
           j.DYALOG_JARVIS_THREAD←ThreadMode
       :EndIf

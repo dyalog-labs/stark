@@ -9,6 +9,7 @@ Stark is the core class of the framework. It manages route registration, request
 | `Handlers`   | Public  | Namespace (or class instance) where handler functions live   |
 | `ThreadMode` | Public  | Controls Jarvis threading -- `''`, `0`, `1`, `'DEBUG'`, `'AUTO'` |
 | `Info`       | Public  | Namespace with `title`, `version`, and optional `description` for the OpenAPI info block |
+| `Debug`      | Public  | Bitmask controlling debug stops and logging (see [Debug mode](#debug-mode)) |
 
 ## Route registration
 
@@ -137,6 +138,30 @@ schema←(
 | `body`        | Schema namespace              | Request body JSON Schema               |
 | `response`    | `(statusCode schema)`         | Success response code and schema       |
 | `errors`      | Vector of `(code description)` | Error response descriptions            |
+
+## Debug mode
+
+Set `router.Debug` before calling `Start` to enable debug stops and logging. The value is a bitmask — combine levels by adding their values.
+
+```apl
+router.Debug←2      ⍝ stop before each user handler call
+router.Debug←1+2    ⍝ stop on error AND stop before handler
+```
+
+| Value | Meaning |
+|-------|---------|
+| `1`   | **Stop on error** — disables error traps at both the Stark dispatch level and the underlying Jarvis level, so errors in user handlers propagate all the way to the APL session. Forwarded to Jarvis. |
+| `2`   | **Stop before user handler** — execution stops just before your handler function is called, letting you inspect `req`, `req.PathParams`, `req.QueryParams`, etc. |
+| `4`   | Jarvis framework debugging (forwarded to Jarvis). |
+| `8`   | Conga event logging — logs low-level TCP/IP events (forwarded to Jarvis). |
+| `16`  | Stop just before the HTTP response is sent (forwarded to Jarvis). |
+| `32`  | **Stark framework debug** — prints a trace line to the session for each matched user route: `STARK: GET /users/42 → GetUser` |
+| `64`  | **Stop before routing** — execution stops at the entry of `_Dispatch`, before any route matching. Useful for inspecting the raw `req` object as Stark sees it. |
+
+Bits `2`, `32`, and `64` are handled entirely by Stark. Bits `1`, `4`, `8`, and `16` are forwarded to the underlying Jarvis instance.
+
+!!! note
+    `Debug←1` must disable traps at every level in the call stack — Stark's dispatch, Jarvis's request handler, and Jarvis's server loop — for errors to reach the APL session. This is why bit `1` is forwarded to Jarvis. Whether the session actually stops interactively depends on your thread mode; it works most naturally with `ThreadMode←'DEBUG'` or when running in thread 0.
 
 ## Lifecycle methods
 

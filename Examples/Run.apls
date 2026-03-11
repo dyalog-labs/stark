@@ -4,7 +4,7 @@
 ⎕SE.(⍎⊃2⎕FIX'/StartupSession.aplf',⍨2⎕NQ#'GetEnvironment' 'DYALOG')
 
 ⎕SE.Link.Import '#' '../APLSource'
-⎕SE.Link.Import '#' (,'.')
+⎕SE.Link.Import '#' (,'./ExampleApp.aplc')
 
 port←8080
 app←⎕NEW #.ExampleApp

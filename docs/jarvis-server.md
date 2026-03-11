@@ -26,6 +26,7 @@ These are set internally by Stark but are worth knowing:
 | `RESTFailProcessing`   | `1`               | Allows custom error responses          |
 | `Port`                 | From `Start` arg  | Listening port                         |
 | `DYALOG_JARVIS_THREAD` | From `ThreadMode` | Thread handling strategy               |
+| `Debug`                | Derived from `router.Debug` | Stark forwards bits `1`, `4`, `8`, and `16`. Bits `2`, `32`, and `64` are Stark-specific and handled internally. |
 
 ## Direct Jarvis access
 
