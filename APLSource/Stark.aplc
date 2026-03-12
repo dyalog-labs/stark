@@ -118,8 +118,15 @@
       :Access Public Instance
       stopIf DebugLevel 64                          ⍝ stop before routing
       routes←((⎕C¨_routes.method)∊⊂⎕C req.Method)/_routes
+      :If 0=≢routes
+          req.Fail 404
+          result←(
+            detail: 'Not Found'
+          )
+          :Return
+      :EndIf
       r pp←{(routes (2⊃⍵))/¨⍨⊂⊃⍵}↓⍉↑routes.pattern pathMatch¨⊂req.Endpoint
-      :If 1≠⍴pp
+      :If 1≠≢pp
           req.Fail 404
           result←(
             detail: 'Not Found'

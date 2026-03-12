@@ -3,6 +3,6 @@
  router.Handlers←#.Mocks.MockHandlers
  '/search' router.Get 'SearchItems'
  req←⎕NEW #.Mocks.MockRequest ('GET' '/search')
- req.QueryParams←1 2⍴'q' 'dyalog'
+ req.QueryParams←1 2⍴(,'q') 'dyalog'
  result←router._Dispatch req
  r←'dyalog'≡result.query
