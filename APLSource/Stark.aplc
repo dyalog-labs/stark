@@ -272,6 +272,11 @@
       _jarvis.Stop
     ∇
 
+    ∇ r←GetJarvis
+      :Access Public Instance
+      r←_jarvis
+    ∇
+
 
     ∇ r←Routes
       :Access Public Instance

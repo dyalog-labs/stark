@@ -20,5 +20,5 @@
   source: "APLSource/Stark.aplc",
   tags: "http,webservice,rest",
   userCommandScript: "",
-  version: "0.1.1",
+  version: "0.1.2",
 }
