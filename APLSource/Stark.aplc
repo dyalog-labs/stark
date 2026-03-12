@@ -206,7 +206,14 @@
               :If 2=opts.⎕NC'operationId'  ⋄ op.operationId←opts.operationId  ⋄ :EndIf
               :If 2=opts.⎕NC'summary'      ⋄ op.summary←opts.summary          ⋄ :EndIf
               :If 2=opts.⎕NC'description'  ⋄ op.description←opts.description  ⋄ :EndIf
-              :If 2=opts.⎕NC'tags'         ⋄ op.tags←opts.tags                ⋄ :EndIf
+              :If 2=opts.⎕NC'tags'
+                :If 2=≡opts.tags
+                  op.tags←opts.tags
+                :Else
+                  ⎕SIGNAL ⊂'tags must be a vector of character vectors. Depth 2'
+                :EndIf
+              :EndIf
+              
 
               ⍝ Request body schema
               :If 9=opts.⎕NC'body'

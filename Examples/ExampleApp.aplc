@@ -55,10 +55,16 @@
     RootSchema←(
     summary: 'Health check'
     tags: ('status'⋄)
+    parameters: ⊂(name:'verbose' ⋄ in:'query' ⋄ required:0 ⋄ schema:(type:'boolean'))
     )
-    ∇ result←Root req
+    ∇ result←Root req;verbose
       :Access Public
-      result←(status:'ok')
+      verbose←req.QueryParams ⎕VGET⊂(,'verbose')''
+      :If verbose≡'true'
+          result←(status:'ok' ⋄ version:'1.0.0' ⋄ uptime:'running')
+      :Else
+          result←(status:'ok')
+      :EndIf
     ∇
 
 

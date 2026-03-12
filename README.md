@@ -66,7 +66,7 @@ This opens the door to Swagger UI, auto-generated client libraries (including AP
 ## Requirements
 
 - Dyalog APL 20.0+
-- Conga (ships with Dyalog)
+- Jarvis 1.22+
 
 ## Documentation
 
