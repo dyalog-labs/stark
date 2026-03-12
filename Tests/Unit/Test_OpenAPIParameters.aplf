@@ -1,0 +1,9 @@
+ r←Test_OpenAPIParameters dummy;router;spec;pathNS;op;param
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/search' router.Get ('ListItems' (parameters: ,⊂(name:'q' ⋄ in:'query' ⋄ required:⊂'false' ⋄ schema:(type:'string'))))
+ spec←router.OpenAPI
+ pathNS←spec.paths⍎⊃spec.paths.⎕NL ¯9
+ op←pathNS⍎⊃pathNS.⎕NL ¯9
+ param←⊃op.parameters
+ r←'q'≡param.name

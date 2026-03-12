@@ -200,12 +200,11 @@
               :EndIf
               op.parameters,←⊂pNS
           :EndFor
-          :If 0=≢op.parameters ⋄ op.⎕EX'parameters' ⋄ :EndIf
-
           :If 9=⎕NC'opts'
               :If 2=opts.⎕NC'operationId'  ⋄ op.operationId←opts.operationId  ⋄ :EndIf
               :If 2=opts.⎕NC'summary'      ⋄ op.summary←opts.summary          ⋄ :EndIf
               :If 2=opts.⎕NC'description'  ⋄ op.description←opts.description  ⋄ :EndIf
+              :If 2≤opts.⎕NC'parameters'   ⋄ op.parameters,←opts.parameters   ⋄ :EndIf
               :If 2=opts.⎕NC'tags'
                 :If 2=≡opts.tags
                   op.tags←opts.tags
@@ -238,6 +237,7 @@
                   :EndFor
               :EndIf
           :EndIf
+          :If 0=≢op.parameters ⋄ op.⎕EX'parameters' ⋄ :EndIf
 
           ⍝ Default 200 response if none specified
           :If 0=≢op.responses.⎕NL ¯2 ¯9

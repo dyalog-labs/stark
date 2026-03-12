@@ -55,7 +55,7 @@
     RootSchema←(
     summary: 'Health check'
     tags: ('status'⋄)
-    parameters: ⊂(name:'verbose' ⋄ in:'query' ⋄ required:0 ⋄ schema:(type:'boolean'))
+    parameters: ,⊂(name:'verbose' ⋄ in:'query' ⋄ required:⊂'false' ⋄ schema:(type:'boolean'))
     )
     ∇ result←Root req;verbose
       :Access Public
