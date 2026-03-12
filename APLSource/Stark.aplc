@@ -118,31 +118,30 @@
       :Access Public Instance
       stopIf DebugLevel 64                          ⍝ stop before routing
       routes←((⎕C¨_routes.method)∊⊂⎕C req.Method)/_routes
-      :For r :In routes
-          (matched pp)←r.pattern pathMatch req.Endpoint
-          :If matched
-              req.PathParams←pp
-              req.QueryParams←(⎕NS '')⎕VSET{(,⊃⍵)(2⊃⍵)}¨↓req.QueryParams
-              :If '_'=⊃r.handler
-                  result←(⍎r.handler)req          ⍝ internal handler (on Stark)
-              :Else
-                  :If DebugLevel 32
-                      ⎕←'STARK: ',req.Method,' ',req.Endpoint,' → ',r.handler
-                  :EndIf
-                  stopIf DebugLevel 2              ⍝ stop before user handler
-                  :Trap 0 DebugLevel 1             ⍝ disable trap if bit 1 set (stop on error)
-                      result←(Handlers⍎r.handler)req
-                  :Else
-                      ⎕SIGNAL⊂⎕DMX               ⍝ re-signal to let Jarvis return 500
-                  :EndTrap
-              :EndIf
-              :Return
+      r pp←{(routes (2⊃⍵))/¨⍨⊂⊃⍵}↓⍉↑routes.pattern pathMatch¨⊂req.Endpoint
+      :If 1≠⍴pp
+          req.Fail 404
+          result←(
+            detail: 'Not Found'
+          )
+          :Return
+      :EndIf
+      r←⊃r
+      req.PathParams←⊃pp ⍝ Shouldn't have multiple matches.
+      req.QueryParams←() ⎕VSET ↓req.QueryParams
+      :If '_'=⊃r.handler
+          result←(⍎r.handler)req          ⍝ internal handler (on Stark)
+      :Else
+          :If DebugLevel 32
+              ⎕←'STARK: ',req.Method,' ',req.Endpoint,' → ',r.handler
           :EndIf
-      :EndFor
-      req.Fail 404
-      result←(
-        detail: 'Not Found'
-      )
+          stopIf DebugLevel 2              ⍝ stop before user handler
+          :Trap 0 DebugLevel 1             ⍝ disable trap if bit 1 set (stop on error)
+              result←(Handlers⍎r.handler)req
+          :Else
+              ⎕SIGNAL⊂⎕DMX               ⍝ re-signal to let Jarvis return 500
+          :EndTrap
+      :EndIf
     ∇
 
     ⍝ OpenAPI spec generation
@@ -261,7 +260,12 @@
       code.Put←{inst._Dispatch ⍵}
       code.Delete←{inst._Dispatch ⍵}
       code.Patch←{inst._Dispatch ⍵}
-      j←⎕NEW (⊃⊃⎕CLASS ⎕THIS).##.Jarvis
+      :If _jarvis≡⍬
+          j←⎕NEW (⊃⊃⎕CLASS ⎕THIS).##.Jarvis
+          _jarvis←j
+      :Else
+          j←_jarvis
+      :EndIf
       j.Port←port
       j.Paradigm←'REST'
       j.CodeLocation←code
@@ -271,7 +275,6 @@
           j.DYALOG_JARVIS_THREAD←ThreadMode
       :EndIf
       j.Start
-      _jarvis←j
     ∇
 
     ∇ Stop
@@ -283,7 +286,6 @@
       :Access Public Instance
       r←_jarvis
     ∇
-
 
     ∇ r←Routes
       :Access Public Instance
