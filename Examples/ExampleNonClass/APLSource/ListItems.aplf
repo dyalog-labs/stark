@@ -1,0 +1,3 @@
+∇ result←ListItems req
+  result←(items:db.items ⋄ total:≢db.items)
+∇

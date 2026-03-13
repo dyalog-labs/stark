@@ -3,8 +3,7 @@
 ⍝
 ⍝ Usage:
 ⍝   ⍝ First define your functions, ListUsers, and GetUser, and CreateUser
-⍝   router←⎕NEW Stark
-⍝   router.Handlers←⎕THIS
+⍝   router←Stark.New ()
 ⍝   '/users'      router.Get   'ListUsers'
 ⍝   '/users/{id}' router.Get   'GetUser'
 ⍝   '/users'      router.Post ('CreateUser' opts)   ⍝ opts is an APLAN ns with metadata
@@ -21,10 +20,16 @@
       :Access Public
       :Implements Constructor
       Info←(title: 'AStarkAPI' ⋄ version: '1.0.0')
-      Handlers←⍬
+      Handlers←1(86⌶)'⎕THIS'
       _routes←⍬
       _jarvis←⍬
       '/openapi.json' Get '_OpenAPIHandler'
+    ∇
+
+    ∇ inst←New args
+      :Access Public Shared
+      inst←⎕NEW ⎕THIS
+      inst.Handlers←1(86⌶)'⎕THIS'
     ∇
 
     ⍝ Route registration
@@ -117,7 +122,7 @@
     ∇ result←_Dispatch req;routes;r;matched;pp
       :Access Public Instance
       stopIf DebugLevel 64                          ⍝ stop before routing
-      routes←((⎕C¨_routes.method)∊⊂⎕C req.Method)/_routes
+      routes←(_routes.method ∊⍥⎕C ⊂req.Method)/_routes
       :If 0=≢routes
           req.Fail 404
           result←(

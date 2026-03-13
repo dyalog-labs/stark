@@ -3,12 +3,11 @@
 ⎕IO←1
 ⎕SE.(⍎⊃2⎕FIX'/StartupSession.aplf',⍨2⎕NQ#'GetEnvironment' 'DYALOG')
 
-⎕SE.Link.Import '#' '../APLSource'
-⎕SE.Link.Import '#' (,'./ExampleApp.aplc')
+⎕SE.Link.Import '#' '../../APLSource'
+⎕SE.Link.Import '#' (,'.')
 
 port←8080
 app←⎕NEW #.ExampleApp
 r←app.GetStark
 r.ThreadMode←0
-⎕←r.ThreadMode
 app.Start port

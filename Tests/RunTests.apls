@@ -23,7 +23,7 @@
 ⎕←'=== Integration Tests ==='
 ⎕SE.Link.Import '#' '../Examples'
 port←19876
-app←⎕NEW #.ExampleApp
+app←⎕NEW #.ExampleClass.ExampleApp
 router←app.GetStark
 router.ThreadMode←'DEBUG'
 app.Start port

@@ -21,8 +21,7 @@
       )
      
       ⍝ Stark setup
-      router←⎕NEW ##.Stark
-      router.Handlers←⎕THIS
+      router←##.Stark.New ()
       router.Info←(title:'Example Items API' ⋄ version:'1.0.0')
      
       '/'router.Get('Root'RootSchema)

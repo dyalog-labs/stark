@@ -1,0 +1,54 @@
+∇ Init
+  Setup   ⍝ initialise #.db
+
+  router←##.Stark.New ()
+  router.Info←(title:'Example Items API' ⋄ version:'1.0.0')
+
+  '/'router.Get('Root'(
+      summary: 'Health check'
+      tags: ('status'⋄)
+      parameters: ,⊂(name:'verbose' ⋄ in:'query' ⋄ required:⊂'false' ⋄ schema:(type:'boolean'))
+  ))
+  '/items'router.Get('ListItems'(
+      summary: 'List all items'
+      tags: ('items'⋄)
+  ))
+  '/items/{id}'router.Get('GetItem'(
+      summary: 'Get an item by ID'
+      tags: ('items'⋄)
+  ))
+  '/items'router.Post('CreateItem'(
+      summary: 'Create a new item'
+      tags: ('items'⋄)
+      body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
+          name:  (type: 'string')
+          price: (type: 'number')
+      ))
+      response: (201 (type: 'object' ⋄ properties: (
+          id:    (type: 'integer')
+          name:  (type: 'string')
+          price: (type: 'number')
+          tags:  (type: 'array' ⋄ items: (type: 'string'))
+      )))
+  ))
+  '/items/{id}'router.Put('UpdateItem'(
+      summary: 'Update an item'
+      tags: ('items'⋄)
+      body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
+          name:  (type: 'string')
+          price: (type: 'number')
+      ))
+  ))
+  '/items/{id}'router.Delete('DeleteItem'(
+      summary: 'Delete an item'
+      tags: ('items'⋄)
+  ))
+  '/search'router.Get('SearchItems'(
+      summary: 'Search items'
+      tags: ('search'⋄)
+  ))
+  '/customer/{cust_id}/invoice/{inv_id}'router.Get('GetInvoice'(
+      summary: 'Get a customer invoice'
+      tags: ('invoices'⋄)
+  ))
+∇

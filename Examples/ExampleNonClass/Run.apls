@@ -1,0 +1,11 @@
+#!/usr/bin/dyalogscript
+
+⎕IO←1
+⎕SE.(⍎⊃2⎕FIX'/StartupSession.aplf',⍨2⎕NQ#'GetEnvironment' 'DYALOG')
+
+⎕SE.Link.Import '#' '../../APLSource'
+⎕SE.Link.Import '#' 'APLSource'
+
+Init
+router.ThreadMode←0
+Start

@@ -1,0 +1,13 @@
+∇ result←UpdateItem req;id;idx;body
+  id←⊃2⊃⎕VFI req.PathParams.id
+  idx←db.items.id⍳id
+  :If idx>≢db.items
+      req.Fail 404
+      result←(detail:'Item not found')
+  :Else
+      body←req.Payload
+      (⊃db.items[idx]).name←body.name
+      (⊃db.items[idx]).price←body.price
+      result←⊃db.items[idx]
+  :EndIf
+∇

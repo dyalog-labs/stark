@@ -1,0 +1,10 @@
+∇ result←GetItem req;id;matches
+  id←⊃2⊃⎕VFI req.PathParams.id
+  matches←db.items[db.items.id⍳id]
+  :If 0=≢matches
+      req.Fail 404
+      result←(detail:'Item not found')
+  :Else
+      result←⊃matches ⍝ shouldn't be more than one match, ID should be uniq
+  :EndIf
+∇

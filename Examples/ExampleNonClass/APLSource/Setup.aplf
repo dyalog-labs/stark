@@ -1,0 +1,9 @@
+∇ Setup
+  ⍝ Seed global state — accessible by all handler functions in #
+  #.db←(
+      items:(
+          (id:1 ⋄ name:'Dyalog APL' ⋄ price:0 ⋄ tags:'language' 'array')
+          (id:2 ⋄ name:'SharpPlot' ⋄ price:0 ⋄ tags:'graphics' 'charting')
+      )
+  )
+∇

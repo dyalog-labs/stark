@@ -1,0 +1,4 @@
+∇ result←SearchItems req;q
+  q←req.QueryParams ⎕VGET⊂(,'q')''
+  result←(query:q ⋄ results:'mock' 'data' ⋄ total:2)
+∇

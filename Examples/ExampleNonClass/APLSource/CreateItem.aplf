@@ -1,0 +1,12 @@
+∇ result←CreateItem req;body;item
+  body←req.Payload
+  item←(
+    id: 1+⌈/0,db.items.id
+    name: body.name
+    price: body.price
+    tags: ⍬
+  )
+  db.items,←item
+  req.StatusCode←201
+  result←item
+∇

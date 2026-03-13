@@ -1,0 +1,6 @@
+∇ result←GetInvoice req
+  result←(
+    customer: req.PathParams.cust_id 
+    invoice: req.PathParams.inv_id
+  )
+∇

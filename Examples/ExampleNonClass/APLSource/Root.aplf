@@ -1,0 +1,8 @@
+∇ result←Root req;verbose
+  verbose←req.QueryParams ⎕VGET⊂(,'verbose')''
+  :If verbose≡'true'
+      result←(status:'ok' ⋄ version:'1.0.0' ⋄ uptime:'running')
+  :Else
+      result←(status:'ok')
+  :EndIf
+∇

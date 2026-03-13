@@ -1,0 +1,11 @@
+∇ result←DeleteItem req;id;mask
+  id←⊃2⊃⎕VFI req.PathParams.id
+  mask←db.items.id≠id
+  :If mask∧.=1
+      req.Fail 404
+      result←(detail:'Item not found')
+  :Else
+      db.items←mask/db.items
+      result←(deleted:1 ⋄ id:id)
+  :EndIf
+∇
