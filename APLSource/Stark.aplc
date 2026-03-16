@@ -4,11 +4,18 @@
 ⍝ Usage:
 ⍝   ⍝ First define your functions, ListUsers, and GetUser, and CreateUser
 ⍝   router←Stark.New ()
+⍝   ⍝ Matrix mode (method path handler options per row):
 ⍝   router.Register [
 ⍝       'GET'  '/users'       'ListUsers'   ()
 ⍝       'GET'  '/users/{id}'  'GetUser'     ()
 ⍝       'POST' '/users'       'CreateUser'  opts   ⍝ opts is a namespace with metadata
 ⍝   ]
+⍝   ⍝ Namespace vector mode (.method .path .handler, and optionally .spec):
+⍝   router.Register (
+⍝       (method: 'GET'  ⋄ path: '/users'      ⋄ handler: 'ListUsers')
+⍝       (method: 'GET'  ⋄ path: '/users/{id}' ⋄ handler: 'GetUser')
+⍝       (method: 'POST' ⋄ path: '/users'      ⋄ handler: 'CreateUser' ⋄ spec: opts)
+⍝   )
 ⍝   router.Start 8080
 
     :Field Public  Handlers      ⍝ namespace where handler functions live
@@ -95,10 +102,21 @@
 
     ∇ r←Register routes
       :Access Public
-      ⍝ Method Endpoint Function {Schema}
-      routes[;2]←,¨routes[;2]
-      _routes⍪←4↑[2]routes,()
-      r←routes
+      ⍝ Matrix mode:   N×4 matrix of (method path handler spec)
+      ⍝ Namespace mode: vector of namespaces, each with .method .path .handler and optionally .spec
+      :If 2=⍴⍴routes
+        routes[;2]←,¨routes[;2]
+        _routes⍪←4↑[2]routes,()
+      :Else
+        :For ns :In ,routes
+          :If 9=ns.⎕NC'spec'
+              _Register ns.method ns.path (ns.handler ns.spec)
+          :Else
+              _Register ns.method ns.path ns.handler
+          :EndIf
+        :EndFor
+      :EndIf
+      r←_routes
     ∇
 
     ⍝ Cover function for 7162⌶ (mangle string into valid APL name)

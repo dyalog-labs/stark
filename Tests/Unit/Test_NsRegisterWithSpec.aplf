@@ -1,0 +1,8 @@
+ r←Test_NsRegisterWithSpec dummy;router;routes
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ routes←(
+     (method: 'GET' ⋄ path: '/items' ⋄ handler: 'ListItems' ⋄ spec: (summary: 'List all items'))
+ )
+ router.Register routes
+ r←'List all items'≡(4⊃router.Routes[1;]).summary

@@ -1,0 +1,10 @@
+ r←Test_NsRegisterCount dummy;router;routes
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ routes←(
+     (method: 'GET'  ⋄ path: '/items'      ⋄ handler: 'ListItems')
+     (method: 'POST' ⋄ path: '/items'      ⋄ handler: 'CreateItem')
+     (method: 'GET'  ⋄ path: '/items/{id}' ⋄ handler: 'GetItem')
+ )
+ router.Register routes
+ r←3=≢router.Routes

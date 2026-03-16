@@ -38,7 +38,11 @@ path router.Patch  rarg
 
 ### Bulk registration
 
-Register multiple routes at once with `router.Register`. Pass a matrix where each row is one route:
+Register multiple routes at once with `router.Register`. There are two input modes: a matrix or a vector of namespaces.
+
+#### Matrix mode
+
+Pass a matrix where each row is one route:
 
 ```apl
 routes←[
@@ -64,6 +68,24 @@ routes←[
 ]
 router.Register routes
 ```
+
+#### Namespace vector mode
+
+Pass a vector of namespaces, each with `.method`, `.path`, `.handler`, and optionally `.spec`:
+
+```apl
+router.Register (
+    (method: 'GET'  ⋄ path: '/items'      ⋄ handler: 'ListItems')
+    (method: 'POST' ⋄ path: '/items'      ⋄ handler: 'CreateItem')
+    (method: 'GET'  ⋄ path: '/items/{id}' ⋄ handler: 'GetItem' ⋄ spec: GetItemSchema)
+)
+```
+
+The `.spec` field is equivalent to the schema column in matrix mode -- a namespace with metadata for [OpenAPI generation](openapi.md). Omit it for routes that need no metadata.
+
+Namespace mode routes go through the same duplicate-detection logic as single-route methods (`Get`, `Post`, etc.).
+
+#### Mixing registration styles
 
 Both `Register` and the individual verb methods can be used together:
 
