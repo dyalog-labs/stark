@@ -4,9 +4,11 @@
 ⍝ Usage:
 ⍝   ⍝ First define your functions, ListUsers, and GetUser, and CreateUser
 ⍝   router←Stark.New ()
-⍝   '/users'      router.Get   'ListUsers'
-⍝   '/users/{id}' router.Get   'GetUser'
-⍝   '/users'      router.Post ('CreateUser' opts)   ⍝ opts is an APLAN ns with metadata
+⍝   router.Register [
+⍝       'GET'  '/users'       'ListUsers'   ()
+⍝       'GET'  '/users/{id}'  'GetUser'     ()
+⍝       'POST' '/users'       'CreateUser'  opts   ⍝ opts is a namespace with metadata
+⍝   ]
 ⍝   router.Start 8080
 
     :Field Public  Handlers      ⍝ namespace where handler functions live
