@@ -6,5 +6,5 @@
  '/c' router.Put 'UpdateItem'
  '/d' router.Delete 'DeleteItem'
  '/e' router.Patch 'UpdateItem'
- methods←router.Routes.method
+ methods←router.Routes[;1]
  r←methods≡'GET' 'POST' 'PUT' 'DELETE' 'PATCH'

@@ -4,20 +4,21 @@
   router←##.Stark.New ()
   router.Info←(title:'Example Items API' ⋄ version:'1.0.0')
 
-  '/'router.Get('Root'(
+  routes←[
+  'GET' '/' 'Root' (
       summary: 'Health check'
       tags: ('status'⋄)
       parameters: ,⊂(name:'verbose' ⋄ in:'query' ⋄ required:⊂'false' ⋄ schema:(type:'boolean'))
-  ))
-  '/items'router.Get('ListItems'(
+  )
+  'GET' '/items' 'ListItems' (
       summary: 'List all items'
       tags: ('items'⋄)
-  ))
-  '/items/{id}'router.Get('GetItem'(
+  )
+  'GET' '/items/{id}' 'GetItem' (
       summary: 'Get an item by ID'
       tags: ('items'⋄)
-  ))
-  '/items'router.Post('CreateItem'(
+  )
+  'POST' '/items' 'CreateItem' (
       summary: 'Create a new item'
       tags: ('items'⋄)
       body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
@@ -30,25 +31,26 @@
           price: (type: 'number')
           tags:  (type: 'array' ⋄ items: (type: 'string'))
       )))
-  ))
-  '/items/{id}'router.Put('UpdateItem'(
+  )
+  'PUT' '/items/{id}' 'UpdateItem'(
       summary: 'Update an item'
       tags: ('items'⋄)
       body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
           name:  (type: 'string')
           price: (type: 'number')
       ))
-  ))
-  '/items/{id}'router.Delete('DeleteItem'(
+  )
+  'DELETE' '/items/{id}' 'DeleteItem'(
       summary: 'Delete an item'
       tags: ('items'⋄)
-  ))
-  '/search'router.Get('SearchItems'(
+  )
+  'GET' '/search' 'SearchItems'(
       summary: 'Search items'
       tags: ('search'⋄)
-  ))
-  '/customer/{cust_id}/invoice/{inv_id}'router.Get('GetInvoice'(
+  )
+  'GET' '/customer/{cust_id}/invoice/{inv_id}' 'GetInvoice'(
       summary: 'Get a customer invoice'
       tags: ('invoices'⋄)
-  ))
+  )
+  ]
 ∇

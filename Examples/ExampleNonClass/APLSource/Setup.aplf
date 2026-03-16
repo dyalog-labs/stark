@@ -1,5 +1,5 @@
 ∇ Setup
-  ⍝ Seed global state — accessible by all handler functions in #
+  ⍝ Setup DB
   #.db←(
       items:(
           (id:1 ⋄ name:'Dyalog APL' ⋄ price:0 ⋄ tags:'language' 'array')

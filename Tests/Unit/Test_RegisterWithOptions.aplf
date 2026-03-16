@@ -2,5 +2,5 @@
  router←⎕NEW #.Stark
  router.Handlers←#.Mocks.MockHandlers
  '/items' router.Get ('ListItems' (summary: 'List all items'))
- route←⊃router.Routes
- r←('ListItems'≡route.handler)∧('List all items'≡route.options.summary)
+ route←router.Routes[1;]
+ r←('ListItems'≡3⊃route)∧('List all items'≡(4⊃route).summary)

@@ -1,0 +1,7 @@
+ r←Test_BulkRegisterWithSchema dummy;router;routes;opts
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ opts←(summary: 'List all items')
+ routes←1 4⍴'GET' '/items' 'ListItems' opts
+ router.Register routes
+ r←'List all items'≡(router.Routes[1;4]).summary

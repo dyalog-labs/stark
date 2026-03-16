@@ -13,7 +13,9 @@ Stark is the core class of the framework. It manages route registration, request
 
 ## Route registration
 
-Register routes by calling the HTTP verb method dyadically: path on the left, handler spec on the right.
+### Single-route methods
+
+Register one route at a time by calling the HTTP verb method dyadically: path on the left, handler spec on the right.
 
 ```apl
 path router.Get    rarg
@@ -33,6 +35,42 @@ path router.Patch  rarg
   ```apl
   '/items' router.Get ('ListItems' schema)
   ```
+
+### Bulk registration
+
+Register multiple routes at once with `router.Register`. Pass a matrix where each row is one route:
+
+```apl
+routes←[
+    ⍝ Method    Endpoint                                Handler        Schema
+      'GET'     '/'                                     'Root'         RootSchema
+      'GET'     '/items'                                'ListItems'    ListItemsSchema
+      'GET'     '/items/{id}'                           'GetItem'      GetItemSchema
+      'POST'    '/items'                                'CreateItem'   CreateItemSchema
+      'PUT'     '/items/{id}'                           'UpdateItem'   UpdateItemSchema
+      'DELETE'  '/items/{id}'                           'DeleteItem'   DeleteItemSchema
+      'GET'     '/customer/{cust_id}/invoice/{inv_id}'  'GetInvoice'   GetInvoiceSchema
+]
+router.Register routes
+```
+
+The schema column is optional -- omit it for a 3-column matrix and Stark fills in empty options:
+
+```apl
+routes←[
+    'GET'  '/items'       'ListItems'
+    'POST' '/items'       'CreateItem'
+    'GET'  '/items/{id}'  'GetItem'
+]
+router.Register routes
+```
+
+Both `Register` and the individual verb methods can be used together:
+
+```apl
+'/health' router.Get 'Health'        ⍝ registered individually
+router.Register routes               ⍝ bulk-register the rest
+```
 
 ## Path parameters
 
@@ -173,6 +211,26 @@ router.Stop          ⍝ shut down the server
 ## Inspection
 
 ```apl
-router.Routes        ⍝ returns the internal vector of route descriptors
+router.Routes        ⍝ returns a matrix of route descriptors (columns: method, path, handler, options)
 router.OpenAPI       ⍝ returns the generated OpenAPI spec as a namespace
+```
+
+`Routes` returns an `N×4` matrix. Each row is one user-registered route (internal routes such as `/openapi.json` are excluded). The columns are:
+
+| Column | Content   | Example           |
+|--------|-----------|-------------------|
+| 1      | Method    | `'GET'`           |
+| 2      | Path      | `'/items/{id}'`   |
+| 3      | Handler   | `'GetItem'`       |
+| 4      | Options   | metadata namespace or `()` |
+
+```apl
+⍝ Count of registered routes
+≢router.Routes
+
+⍝ All methods
+router.Routes[;1]
+
+⍝ Handler for the first route
+3⊃router.Routes[1;]
 ```

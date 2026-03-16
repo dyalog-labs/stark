@@ -21,7 +21,7 @@
       :Implements Constructor
       Info←(title: 'AStarkAPI' ⋄ version: '1.0.0')
       Handlers←1(86⌶)'⎕THIS'
-      _routes←⍬
+      _routes←0 4⍴''
       _jarvis←⍬
       '/openapi.json' Get '_OpenAPIHandler'
     ∇
@@ -75,20 +75,28 @@
       ⍝ Check for duplicate routes: normalize {param} segments so {id} and {user_id} match
       norm←_NormalizePath path
       :If 0<≢_routes
-          existing←((⎕C¨_routes.method)∊⊂⎕C method)/_routes
+          existing←(_routes[;1]∊⍥⎕C ⊂method)⌿_routes
           :If 0<≢existing
-              :If (⊂norm)∊_NormalizePath¨existing.pattern
+              :If (⊂norm)∊_NormalizePath¨existing[;2]
                   ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Duplicate route: ',method,' ',path,' conflicts with an existing registration'))
               :EndIf
           :EndIf
       :EndIf
       r←(
-        method: method
-        pattern: ,path
-        handler: handler
-        options: options
+        method
+        ,path
+        handler
+        options
       )
-      _routes,←r
+      _routes⍪←r
+    ∇
+
+    ∇ r←Register routes
+      :Access Public
+      ⍝ Method Endpoint Function {Schema}
+      routes[;2]←,¨routes[;2]
+      _routes⍪←4↑[2]routes,()
+      r←routes
     ∇
 
     ⍝ Cover function for 7162⌶ (mangle string into valid APL name)
@@ -119,10 +127,10 @@
     }
 
     ⍝ Route an incoming Jarvis request to the matching handler
-    ∇ result←_Dispatch req;routes;r;matched;pp
+    ∇ result←_Dispatch req;routes;r;matched;pp;m
       :Access Public Instance
       stopIf DebugLevel 64                          ⍝ stop before routing
-      routes←(_routes.method ∊⍥⎕C ⊂req.Method)/_routes
+      routes←(_routes[;1] ∊⍥⎕C ⊂req.Method)⌿_routes
       :If 0=≢routes
           req.Fail 404
           result←(
@@ -130,7 +138,8 @@
           )
           :Return
       :EndIf
-      r pp←{(routes (2⊃⍵))/¨⍨⊂⊃⍵}↓⍉↑routes.pattern pathMatch¨⊂req.Endpoint
+      m pp←{(⊃⍵) (⍵⊃⍛/2⊃⍵)}↓⍉↑routes[;2] pathMatch¨⊂req.Endpoint
+      r←m⌿routes
       :If 1≠≢pp
           req.Fail 404
           result←(
@@ -138,18 +147,18 @@
           )
           :Return
       :EndIf
-      r←⊃r
+      r←r[1;]
       req.PathParams←⊃pp ⍝ Shouldn't have multiple matches.
       req.QueryParams←() ⎕VSET ↓req.QueryParams
-      :If '_'=⊃r.handler
-          result←(⍎r.handler)req          ⍝ internal handler (on Stark)
+      :If '_'=⊃3⊃r
+          result←(⍎3⊃r)req          ⍝ internal handler (on Stark)
       :Else
           :If DebugLevel 32
-              ⎕←'STARK: ',req.Method,' ',req.Endpoint,' → ',r.handler
+              ⎕←'STARK: ',req.Method,' ',req.Endpoint,' → ',3⊃r
           :EndIf
           stopIf DebugLevel 2              ⍝ stop before user handler
           :Trap 0 DebugLevel 1             ⍝ disable trap if bit 1 set (stop on error)
-              result←(Handlers⍎r.handler)req
+              result←(Handlers⍎3⊃r)req
           :Else
               ⎕SIGNAL⊂⎕DMX               ⍝ re-signal to let Jarvis return 500
           :EndTrap
@@ -178,30 +187,30 @@
       ctKey←_Mangle'application/json'
 
       paths←()
-      :For r :In _routes
-          :If '_'=⊃r.handler ⋄ :Continue ⋄ :EndIf   ⍝ skip internal routes
+      :For r :In ↓_routes
+          :If '_'=⊃3⊃r ⋄ :Continue ⋄ :EndIf   ⍝ skip internal routes
 
           ⍝ Get or create path object
-          pathKey←_Mangle r.pattern
+          pathKey←_Mangle 2⊃r
           :If 0=paths.⎕NC⊂pathKey
               paths ⎕VSET ⊂pathKey ()
           :EndIf
           pathNS←paths ⎕VGET pathKey
 
           ⍝ Build operation object
-          method←⎕C r.method
+          method←⎕C 1⊃r
           op←(
             parameters: ⍬
             responses: ()
           )
 
           ⍝ Map metadata from route options
-          opts←r.options
-          op.operationId←r.handler
+          opts←4⊃r
+          op.operationId←3⊃r
 
           ⍝ Extract path parameters from {param} segments
           ⍝ If opts.params.{name} exists, its schema overrides the default 'string'
-          segs←'/'(≠⊆⊢)r.pattern
+          segs←'/'(≠⊆⊢)2⊃r
           varMask←'{'=⊃¨segs
           :For param :In {1↓¯1↓⍵}¨varMask/segs
               :If 9=⎕NC'opts' ⋄ :AndIf 9=opts.⎕NC'params' ⋄ :AndIf 9=opts.params.⎕NC⊂param
@@ -301,7 +310,7 @@
 
     ∇ r←Routes
       :Access Public Instance
-      r←('_'≠⊃¨_routes.handler)/_routes
+      r←('_'≠⊃¨_routes[;3])⌿_routes
     ∇
 
 :EndClass

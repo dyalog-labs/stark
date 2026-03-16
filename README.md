@@ -33,12 +33,13 @@ With raw Jarvis in REST mode, you write one function per HTTP verb that handles 
 This works, but as endpoints grow, the routing logic can get deeply nested and harder to maintain. Stark replaces this with declarative route registration:
 
 ```apl
-router←⎕NEW Stark
-router.Handlers←⎕THIS
-
-'/health'     router.Get 'Health'
-'/items'      router.Get 'ListItems'
-'/items/{id}' router.Get 'GetItem'
+router←Stark.New ()
+routes←[
+    'GET' '/health'     'Health'
+    'GET' '/items'      'ListItems'
+    'GET' '/items/{id}' 'GetItem'
+]
+routes←router.Register routes
 
 router.Start 8080
 ```
@@ -58,7 +59,10 @@ Stark auto-generates an OpenAPI spec from your registered routes, served at `/op
 
 ```apl
 opts←(summary: 'Get an item by ID' ⋄ tags: ('items'⋄))
-'/items/{id}' router.Get ('GetItem' opts)
+routes←[
+    'GET' '/items/{id}' 'GetItem' opts
+]
+routes←router.Register routes
 ```
 
 This opens the door to Swagger UI, auto-generated client libraries (including APL clients), Postman collections, LLM tool integration, and any other tooling that consumes OpenAPI specs.
@@ -66,7 +70,7 @@ This opens the door to Swagger UI, auto-generated client libraries (including AP
 ## Requirements
 
 - Dyalog APL 20.0+
-- Jarvis 1.22+
+- Jarvis 1.22+ (Included in the Tatin package)
 
 ## Documentation
 

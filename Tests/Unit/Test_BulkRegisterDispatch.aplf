@@ -1,0 +1,8 @@
+ r←Test_BulkRegisterDispatch dummy;router;routes;req;result
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ routes←↑('GET' '/items' 'ListItems')('GET' '/items/{id}' 'GetItem')
+ router.Register routes
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/items')
+ result←router._Dispatch req
+ r←2=result.total

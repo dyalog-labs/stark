@@ -75,10 +75,18 @@ router←⎕NEW ##.Stark
 router.Handlers←⎕THIS         ⍝ handlers are methods on this class
 router.Info←(title: 'Example Items API' ⋄ version: '1.0.0')
 
-'/' router.Get ('Root' RootSchema)
-'/items' router.Get ('ListItems' ListItemsSchema)
-'/items/{id}' router.Get ('GetItem' GetItemSchema)
-⍝ ... more routes
+routes←[
+    ⍝ Method    Endpoint                                Handler        Schema
+      'GET'     '/'                                     'Root'         RootSchema
+      'GET'     '/items'                                'ListItems'    ListItemsSchema
+      'GET'     '/items/{id}'                           'GetItem'      GetItemSchema
+      'POST'    '/items'                                'CreateItem'   CreateItemSchema
+      'PUT'     '/items/{id}'                           'UpdateItem'   UpdateItemSchema
+      'DELETE'  '/items/{id}'                           'DeleteItem'   DeleteItemSchema
+      'GET'     '/search'                               'SearchItems'  SearchItemsSchema
+      'GET'     '/customer/{cust_id}/invoice/{inv_id}'  'GetInvoice'   GetInvoiceSchema
+]
+router.Register routes
 ```
 
 Each handler is a public method that receives the request and returns a namespace:
