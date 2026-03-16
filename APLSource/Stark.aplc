@@ -105,6 +105,9 @@
       ⍝ Matrix mode:   N×4 matrix of (method path handler spec)
       ⍝ Namespace mode: vector of namespaces, each with .method .path .handler and optionally .spec
       :If 2=⍴⍴routes
+        :If _routes{0≢≢⊃∩/{_NormalizePath¨⍵}¨⍺ ⍵}routes
+            ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Duplicate routes detected'))
+        :EndIf
         routes[;2]←,¨routes[;2]
         _routes⍪←4↑[2]routes,()
       :Else

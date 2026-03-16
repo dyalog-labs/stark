@@ -53,4 +53,5 @@
       tags: ('invoices'⋄)
   )
   ]
+  router.Register routes
 ∇
