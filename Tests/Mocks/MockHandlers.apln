@@ -31,4 +31,12 @@
       result←(cust: req.PathParams.cust_id ⋄ inv: req.PathParams.inv_id)
     ∇
 
+    ∇ result←BrokenHandler req
+      ⎕SIGNAL ⊂('EN' 11)('Message' 'deliberate error for testing')
+    ∇
+
+    ∇ result←err HandleError req
+      result←(EN: err.EN ⋄ message: err.Message)
+    ∇
+
 :EndNamespace

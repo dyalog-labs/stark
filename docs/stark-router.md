@@ -10,6 +10,7 @@ Stark is the core class of the framework. It manages route registration, request
 | `ThreadMode` | Public  | Controls Jarvis threading -- `''`, `0`, `1`, `'DEBUG'`, `'AUTO'` |
 | `Info`       | Public  | Namespace with `title`, `version`, and optional `description` for the OpenAPI info block |
 | `Debug`      | Public  | Bitmask controlling debug stops and logging (see [Debug mode](#debug-mode)) |
+| `OnErrorFn`  | Public  | Name of a dyadic result-returning function in `Handlers` to call on handler errors (see [Error handling](#error-handling)) |
 
 ## Route registration
 
@@ -229,6 +230,38 @@ Bits `2`, `32`, and `64` are handled entirely by Stark. Bits `1`, `4`, `8`, and 
 router.Start 8080    ⍝ start serving on the given port
 router.Stop          ⍝ shut down the server
 ```
+
+## Error handling
+
+By default, any error raised inside a handler is re-signaled out of Stark's dispatch loop, propagating to the underlying Jarvis server (which returns a 500 with no body).
+
+Set `OnErrorFn` to the name of a handler function in your `Handlers` namespace to intercept errors instead:
+
+```apl
+router.OnErrorFn←'HandleError'
+```
+
+When an error occurs and `OnErrorFn` is set, Stark:
+
+1. Clones `⎕DMX` into a plain namespace before anything else can change it.
+2. Calls `req.Fail 500` to set the response status.
+3. Calls `result←err(Handlers⍎OnErrorFn)req` and uses the return value as the response body.
+
+The hook receives the cloned `⎕DMX` as its left argument and `req` as its right argument:
+
+```apl
+∇ result←err HandleError req
+  ⍝ err.EN      - error number
+  ⍝ err.EM      - error message
+  ⍝ err.Message - full error text
+  result←(error: err.Message)
+∇
+```
+
+The function must be result-returning and dyadic (or ambivalent). Stark validates this at `Start` and signals EN 11 if the requirement is not met.
+
+!!! note
+    `OnErrorFn` is bypassed when `Debug←1` is set, because `Debug←1` disables the `:Trap` block entirely. This is intentional: debug mode lets errors propagate to the APL session for inspection.
 
 ## Inspection
 

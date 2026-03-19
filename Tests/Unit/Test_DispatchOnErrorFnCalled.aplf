@@ -1,0 +1,8 @@
+ r←Test_DispatchOnErrorFnCalled dummy;router;req;result
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ router.OnErrorFn←'HandleError'
+ '/broken' router.Get 'BrokenHandler'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/broken')
+ result←router._Dispatch req
+ r←(11=result.EN)∧('deliberate error for testing'≡result.message)∧(500=req.Response.Status)

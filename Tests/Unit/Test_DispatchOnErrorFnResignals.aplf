@@ -1,0 +1,12 @@
+ r←Test_DispatchOnErrorFnResignals dummy;router;req
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ ⍝ OnErrorFn deliberately left at default ''
+ '/broken' router.Get 'BrokenHandler'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/broken')
+ :Trap 11
+     router._Dispatch req
+     r←0
+ :Else
+     r←1
+ :EndTrap

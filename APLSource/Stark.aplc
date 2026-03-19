@@ -22,6 +22,7 @@
     :Field Public  ThreadMode←'' ⍝ DYALOG_JARVIS_THREAD: '' (Jarvis default), 0, 1, 'DEBUG', 'AUTO'
     :Field Public  Info          ⍝ namespace with title, version, description for OpenAPI info
     :Field Public  Debug←0       ⍝ 0=all errors trapped, 1=stop on error in dispatch, 2=stop before user handler, 4=Jarvis framework debug, 8=Conga event logging, 16=stop before response, 32=Stark framework debug, 64=stop before routing
+    :Field Public  OnErrorFn←''  ⍝ if set, called as err OnErrorFn req after Fail 500 instead of resignalling; err is a ⎕DMX clone
     :Field Private _routes       ⍝ vector of route descriptor namespaces
     :Field Private _jarvis       ⍝ underlying Jarvis instance
 
@@ -150,7 +151,7 @@
     }
 
     ⍝ Route an incoming Jarvis request to the matching handler
-    ∇ result←_Dispatch req;routes;r;matched;pp;m
+    ∇ result←_Dispatch req;routes;r;matched;pp;m;err
       :Access Public Instance
       stopIf DebugLevel 64                          ⍝ stop before routing
       routes←(_routes[;1] ∊⍥⎕C ⊂req.Method)⌿_routes
@@ -183,7 +184,13 @@
           :Trap 0 DebugLevel 1             ⍝ disable trap if bit 1 set (stop on error)
               result←(Handlers⍎3⊃r)req
           :Else
-              ⎕SIGNAL⊂⎕DMX               ⍝ re-signal to let Jarvis return 500
+              :If ~0∊⍴OnErrorFn
+                  err←()⎕NS ⎕DMX          ⍝ deep clone ⎕DMX before req.Fail may alter it
+                  req.Fail 500
+                  result←err(Handlers⍎OnErrorFn)req
+              :Else
+                  ⎕SIGNAL⊂⎕DMX.(('EN'EN)('EM'EM)('Message'(OSError{⍵,2⌽(×≢⊃⍬⍴2⌽⍺,⊂'')/'") ("',⊃⍬⍴2⌽⍺}Message))) ⍝ RESIGNAL
+              :EndIf
           :EndTrap
       :EndIf
     ∇
@@ -315,6 +322,13 @@
       j.CodeLocation←code
       j.RESTFailProcessing←1
       j.Debug←+/(1 4 8 16)×1=2|⌊Debug÷1 4 8 16   ⍝ forward bits 1,4,8,16; bit 2 is replaced by Stark's bit 64/2
+      :If ~0∊⍴OnErrorFn
+          :If 3≠Handlers.⎕NC⊂OnErrorFn
+              ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: OnErrorFn "',OnErrorFn,'" not found in Handlers'))
+          :ElseIf ~∧/(⊃Handlers.⎕AT OnErrorFn)∊¨1(2 ¯2)0
+              ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: OnErrorFn "',OnErrorFn,'" must be a result-returning dyadic function'))
+          :EndIf
+      :EndIf
       :If ''≢ThreadMode
           j.DYALOG_JARVIS_THREAD←ThreadMode
       :EndIf
