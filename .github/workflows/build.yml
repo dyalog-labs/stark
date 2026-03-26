@@ -19,6 +19,8 @@ jobs:
           apt-get update && apt-get install -y git nodejs zip unzip
 
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Activate Tatin and Cider
         run: dyalogscript .github/activate.apls
