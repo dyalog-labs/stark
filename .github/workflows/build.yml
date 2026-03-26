@@ -23,10 +23,10 @@ jobs:
       - name: Activate Tatin and Cider
         run: dyalogscript .github/activate.apls
 
-      - name: Stamp version with git hash
+      - name: Stamp version with build number
         run: |
-          SHORT_HASH=$(git rev-parse --short HEAD)
-          sed -i "s/version: \"\([^\"]*\)\"/version: \"\1+${SHORT_HASH}\"/" apl-package.json
+          BUILD_NUM=$(git rev-list --count "$(git describe --tags --abbrev=0)"..HEAD)
+          sed -i "s/version: \"\([^\"]*\)\"/version: \"\1+${BUILD_NUM}\"/" apl-package.json
 
       - name: Build package
         run: dyalogscript Build.apls
