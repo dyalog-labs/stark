@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Install Dependencies
         run: |
-          apt-get update && apt-get install -y nodejs zip unzip
+          apt-get update && apt-get install -y git nodejs zip unzip
 
       - uses: actions/checkout@v4
 
