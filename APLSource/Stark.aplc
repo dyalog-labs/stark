@@ -1,4 +1,8 @@
 :Class Stark
+⍝ THIS PROJECT IS NOT FOR PUBLIC USE YET
+⍝ IT HAS NOT YET BEEN THOROUGHLY REVIEWED
+⍝ THIS PROJECT IS IN A BETA PHASE
+
 ⍝ Fastify-style HTTP router for Dyalog APL, built on top of Jarvis.
 ⍝
 ⍝ Usage:

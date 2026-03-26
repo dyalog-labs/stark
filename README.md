@@ -1,6 +1,7 @@
 # Stark
 
-> **Internal project — not yet ready for public release.** I'm trying to gather feedback before opening this up more widely. I'd love to hear your thoughts.
+> **Internal project — not yet ready for public release.** I'm trying to gather feedback before opening this up more widely. I'd love to hear your thoughts. Although this project is "publicly" available on test.tatin.dev, it is not really meant for public use yet. 
+
 
 Stark is a routing layer on top of Jarvis that makes it straightforward to build REST APIs in Dyalog APL. Each route maps directly to a function, and removes the need for manual path parsing. Simply define your routes, write your handlers, and Stark takes care of dispatch. It also auto-generates an OpenAPI spec from your route definitions, giving you machine-readable documentation, Swagger UI, client generation, and tool integration for free.
 

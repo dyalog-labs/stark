@@ -23,6 +23,11 @@ jobs:
       - name: Activate Tatin and Cider
         run: dyalogscript .github/activate.apls
 
+      - name: Stamp version with git hash
+        run: |
+          SHORT_HASH=$(git rev-parse --short HEAD)
+          sed -i "s/version: \"\([^\"]*\)\"/version: \"\1+${SHORT_HASH}\"/" apl-package.json
+
       - name: Build package
         run: dyalogscript Build.apls
 
@@ -30,4 +35,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Stark
-          path: Dist/dyalog-Stark-*.*.*.zip
+          path: Dist/bkaw-Stark-*.zip

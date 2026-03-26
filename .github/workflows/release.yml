@@ -27,8 +27,15 @@ jobs:
       - name: Build package
         run: dyalogscript Build.apls
 
+      - name: Publish to Tatin
+        run: |
+          cd Dist
+          dyalogscript ../.github/release.apls
+        env:
+          TATIN_API_KEY: ${{ secrets.TATIN_API_KEY }}
+
       - name: Create draft release
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          files: Dist/dyalog-Stark-*.*.*.zip
+          files: Dist/bkaw-Stark-*.zip
