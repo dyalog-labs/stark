@@ -30,8 +30,8 @@ These are set internally by Stark but are worth knowing:
 
 ## Direct Jarvis access
 
-If you need the underlying Jarvis instance (for example, to configure HTTPS or CORS), use `GetStark` from your app class to get the router, then access the Jarvis instance through the class internals, or configure Jarvis settings before calling `Start`.
+If you need to access the underlying Jarvis instance (to, for example, to configure HTTPS or CORS), use the `GetJarvis` method on the Stark instance. 
 
 ## Further reading
 
-Jarvis is maintained by Dyalog Ltd. For full documentation on Jarvis features like HTTPS configuration, authentication, and session management, refer to the [Dyalog Jarvis repository](https://github.com/Dyalog/Jarvis).
+Jarvis is maintained by Dyalog Ltd. For full documentation on Jarvis features like HTTPS configuration, authentication, and session management, refer to the [Dyalog Jarvis repository](https://github.com/Dyalog/Jarvis) or [Dyalog Jarvis Documentation](https://dyalog.github.io/Jarvis/1.21/)
