@@ -323,9 +323,9 @@
       j.RESTFailProcessing←1
       j.Debug←+/(1 4 8 16)×1=2|⌊Debug÷1 4 8 16   ⍝ forward bits 1,4,8,16; bit 2 is replaced by Stark's bit 64/2
       :If ~0∊⍴OnErrorFn
-          :If 3≠Handlers.⎕NC⊂OnErrorFn
+          :If 0=Handlers.⎕NC⊂OnErrorFn
               ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: OnErrorFn "',OnErrorFn,'" not found in Handlers'))
-          :ElseIf ~∧/(⊃Handlers.⎕AT OnErrorFn)∊¨1(2 ¯2)0
+          :ElseIf ~2 1≡|11 10 Handlers.⎕ATX OnErrorFn ⍝∧/(⊃Handlers.⎕AT OnErrorFn)∊¨1(2 ¯2)0
               ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: OnErrorFn "',OnErrorFn,'" must be a result-returning dyadic function'))
           :EndIf
       :EndIf
