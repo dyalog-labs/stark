@@ -185,20 +185,18 @@ schema←(
     description: 'Returns every item in the database'
     tags: ('items'⋄)
     body: (type: 'object' ⋄ properties: (name: (type: 'string')))
-    response: (201 (type: 'object' ⋄ properties: (id: (type: 'integer'))))
-    errors: ((404 'Not found')⋄)
+    responses: (201 (type: 'object' ⋄ properties: (id: (type: 'integer')))⋄)
 )
 '/items' router.Post ('CreateItem' schema)
 ```
 
-| Key           | Type                          | Description                            |
-|---------------|-------------------------------|----------------------------------------|
-| `summary`     | String                        | Short description of the operation     |
-| `description` | String                        | Longer description                     |
-| `tags`        | Vector of strings             | OpenAPI tags for grouping              |
-| `body`        | Schema namespace              | Request body JSON Schema               |
-| `response`    | `(statusCode schema)`         | Success response code and schema       |
-| `errors`      | Vector of `(code description)` | Error response descriptions            |
+| Key           | Type                                      | Description                            |
+|---------------|-------------------------------------------|----------------------------------------|
+| `summary`     | String                                    | Short description of the operation     |
+| `description` | String                                    | Longer description                     |
+| `tags`        | Vector of strings                         | OpenAPI tags for grouping              |
+| `body`        | Schema namespace                          | Request body JSON Schema               |
+| `responses`   | `(statusCode responseNs)` OR a namespace  | Success response code and response schema       |
 
 ## Debug mode
 

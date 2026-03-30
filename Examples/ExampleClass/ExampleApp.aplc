@@ -114,12 +114,13 @@
     name:  (type: 'string')
     price: (type: 'number')
     ))
-    response: (201 (type: 'object' ⋄ properties: (
+    responses: (201 (type: 'object' ⋄ properties: (
     id:    (type: 'integer')
     name:  (type: 'string')
     price: (type: 'number')
     tags:  (type: 'array' ⋄ items: (type: 'string'))
-    )))
+    ))
+    )
     )
     ∇ result←CreateItem req;body;item
       :Access Public

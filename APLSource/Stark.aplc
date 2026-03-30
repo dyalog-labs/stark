@@ -274,29 +274,18 @@
                   op.requestBody←(required: (⊂'true') ⋄ content: ct)
               :EndIf
 
-              ⍝ Response: 
+              ⍝ Responses: 
               ⍝ Could be a vector of vectors (statusCode schema)
               ⍝ Or
               ⍝ Could be a namespace (but names are expeceted to be pre-mangled)
-              :If 2≤opts.⎕NC'response'
-                  ⍝(code schemaNS)←↓⍉↑ opts.response
-                  :If (9.1=42∘⎕ATX)'opts.response'
-                    op.responses ⎕NS opts.response
+              :If 2≤opts.⎕NC'responses'
+                  :If (9.1=42∘⎕ATX)'opts.responses'
+                    op.responses ⎕NS opts.responses
                   :Else
-                    op.responses ⎕VSET ↓⍉↑(_Mangle⍕¨⊃¨,⊆opts.response) (2⊃¨,⊆opts.response)
+                    op.responses ⎕VSET ↓⍉↑(_Mangle⍕¨⊃¨,⊆opts.responses) (2⊃¨,⊆opts.responses)
                   :EndIf
-                  ⍝respNS←(description: 'Successful response' ⋄ content: ct)
-                  ⍝respKey←_Mangle⍕code
-                  ⍝op.responses ⎕VSET ⊂respKey respNS
               :EndIf
 
-              ⍝ Error responses: vector of (statusCode description) pairs
-              :If 2≤opts.⎕NC'errors'
-                  :For e :In opts.errors
-                      respKey←_Mangle⍕⊃e
-                      op.responses ⎕VSET ⊂respKey (description: 2⊃e)
-                  :EndFor
-              :EndIf
           :EndIf
           :If 0=≢op.parameters ⋄ op.⎕EX'parameters' ⋄ :EndIf
 

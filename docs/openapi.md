@@ -43,11 +43,13 @@ opts←(
         name:  (type: 'string')
         price: (type: 'number')
     ))
-    response: (201 (type: 'object' ⋄ properties: (
+    responses: 
+    (201 (type: 'object' ⋄ properties: (
         id:    (type: 'integer')
         name:  (type: 'string')
         price: (type: 'number')
-    )))
+    ))
+    )
     errors: ((404 'Not found')⋄)
 )
 
