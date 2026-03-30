@@ -1,0 +1,10 @@
+ r←Test_OpenAPIResponseNS dummy;router;spec;pathNS;op;respNS;key
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ key←0(7162⌶)'201'
+ respNS←() ⎕VSET ⊂key (description: 'Created')
+ '/items' router.Post ('CreateItem' (response: respNS))
+ spec←router.OpenAPI
+ pathNS←spec.paths⍎⊃spec.paths.⎕NL ¯9
+ op←pathNS⍎⊃pathNS.⎕NL ¯9
+ r←'Created'≡(op.responses⍎key).description

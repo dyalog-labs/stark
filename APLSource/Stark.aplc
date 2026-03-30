@@ -211,14 +211,14 @@
       result←_BuildOpenAPI
     ∇
 
-    ∇ spec←_BuildOpenAPI;paths;r;pathKey;pathNS;method;op;opts;segs;varMask;param;pNS;ct;code;schemaNS;e;respNS;respKey;ctKey
+    ∇ spec←_BuildOpenAPI;paths;r;pathKey;pathNS;method;op;opts;segs;varMask;param;pNS;ct;code;schemaNS;e;respNS;respKey;jsonCtKey
       :Access Private Instance
       ⍝ _Mangle mangles strings into valid APL names; ⎕JSON will unmangle them
       spec←(
         openapi: '3.0.3'
         info: Info
       )
-      ctKey←_Mangle'application/json'
+      jsonCtKey←_Mangle'application/json'
 
       paths←()
       :For r :In ↓_routes
@@ -270,17 +270,24 @@
 
               ⍝ Request body schema
               :If 9=opts.⎕NC'body'
-                  ct←() ⎕VSET ⊂ctKey (schema: opts.body)
+                  ct←() ⎕VSET ⊂jsonCtKey (schema: opts.body)
                   op.requestBody←(required: (⊂'true') ⋄ content: ct)
               :EndIf
 
-              ⍝ Success response: (statusCode schema)
+              ⍝ Response: 
+              ⍝ Could be a vector of vectors (statusCode schema)
+              ⍝ Or
+              ⍝ Could be a namespace (but names are expeceted to be pre-mangled)
               :If 2≤opts.⎕NC'response'
-                  (code schemaNS)←opts.response
-                  ct←() ⎕VSET ⊂ctKey (schema: schemaNS)
-                  respNS←(description: 'Successful response' ⋄ content: ct)
-                  respKey←_Mangle⍕code
-                  op.responses ⎕VSET ⊂respKey respNS
+                  ⍝(code schemaNS)←↓⍉↑ opts.response
+                  :If (9.1=42∘⎕ATX)'opts.response'
+                    op.responses ⎕NS opts.response
+                  :Else
+                    op.responses ⎕VSET ↓⍉↑(_Mangle⍕¨⊃¨,⊆opts.response) (2⊃¨,⊆opts.response)
+                  :EndIf
+                  ⍝respNS←(description: 'Successful response' ⋄ content: ct)
+                  ⍝respKey←_Mangle⍕code
+                  ⍝op.responses ⎕VSET ⊂respKey respNS
               :EndIf
 
               ⍝ Error responses: vector of (statusCode description) pairs
