@@ -151,7 +151,7 @@
         varMask←'{'=⊃¨patSplit
         ≢/(⊂~varMask)/¨patSplit pathSplit:0()
         names←({1↓¯1↓⍵}¨patSplit[⍸varMask])
-        1(()⎕VSET↓⍉↑names(pathSplit[⍸varMask]))
+        1(()⎕VSET↓⍉↑(0(7162⌶)names)(pathSplit[⍸varMask]))
     }
 
     ⍝ Route an incoming Jarvis request to the matching handler
@@ -177,7 +177,9 @@
       :EndIf
       r←r[1;]
       req.PathParams←⊃pp ⍝ Shouldn't have multiple matches.
-      req.QueryParams←() ⎕VSET ↓req.QueryParams
+      ⎕←⎕JSON ↓req.QueryParams
+      ⎕←1(220⌶)req.QueryParams
+      req.QueryParams←() ⎕VSET ↓{⍵≡0 2⍴⍬:0 2⍴⍬⋄n←⍵⋄n[;1]←0(7162⌶)n[;1]⋄n}req.QueryParams
       :If '_'=⊃3⊃r
           result←(⍎3⊃r)req          ⍝ internal handler (on Stark)
       :Else
