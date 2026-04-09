@@ -36,7 +36,7 @@
       Info←(title: 'AStarkAPI' ⋄ version: '1.0.0')
       Handlers←1(86⌶)'⎕THIS'
       _routes←0 4⍴''
-      _jarvis←⍬
+      _jarvis←⎕NEW (⊃⊃⎕CLASS ⎕THIS).##.Jarvis
       '/openapi.json' Get '_OpenAPIHandler'
     ∇
 
@@ -177,8 +177,6 @@
       :EndIf
       r←r[1;]
       req.PathParams←⊃pp ⍝ Shouldn't have multiple matches.
-      ⎕←⎕JSON ↓req.QueryParams
-      ⎕←1(220⌶)req.QueryParams
       req.QueryParams←() ⎕VSET ↓{⍵≡0 2⍴⍬:0 2⍴⍬⋄n←⍵⋄n[;1]←0(7162⌶)n[;1]⋄n}req.QueryParams
       :If '_'=⊃3⊃r
           result←(⍎3⊃r)req          ⍝ internal handler (on Stark)
