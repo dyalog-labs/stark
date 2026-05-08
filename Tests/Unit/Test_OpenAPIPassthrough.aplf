@@ -1,0 +1,8 @@
+ r←Test_OpenAPIPassthrough dummy;router;spec;pathNS;op
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get ('ListItems' (summary: 'List items' ⋄ deprecated: ⊂'true'))
+ spec←router.OpenAPI
+ pathNS←spec.paths⍎⊃spec.paths.⎕NL ¯9
+ op←pathNS⍎⊃pathNS.⎕NL ¯9
+ r←('List items'≡op.summary)∧(0<op.⎕NC'deprecated')

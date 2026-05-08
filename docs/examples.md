@@ -6,12 +6,12 @@ The included `ExampleApp` class demonstrates a complete REST API with in-memory 
 
 ### Source
 
-Located at `Examples/ExampleApp.aplc` with a runner script at `Examples/Run.apls`.
+Located at `Examples/ExampleClass/ExampleApp.aplc` with a runner script at `Examples/ExampleClass/Run.apls`.
 
 ### Running it
 
 ```bash
-cd Examples
+cd Examples/ExampleClass
 dyalogscript Run.apls
 ```
 

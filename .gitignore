@@ -12,3 +12,6 @@ conga.crash
 /tatin-dependencies_dev/*
 !/tatin-dependencies_dev/apl-dependencies.txt
 !/tatin-dependencies_dev/apl-buildlist.json
+
+.claude
+.devcontainer

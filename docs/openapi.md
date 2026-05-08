@@ -21,57 +21,72 @@ spec←router.OpenAPI
 The generated spec contains:
 
 - **Info block** -- populated from `router.Info` (`title`, `version`, `description`)
+- **Root-level fields** -- any extra OpenAPI root fields from `router.Spec` (`components`, `security`, `servers`, etc.)
 - **Paths** -- one entry per registered route pattern
 - **Operations** -- one per HTTP method on each path
 - **Path parameters** -- automatically extracted from `{param}` segments in the route pattern
-- **Request body schemas** -- from the `body` metadata key
-- **Response schemas** -- from the `response` metadata key
-- **Error responses** -- from the `errors` metadata key
-- **Summaries, descriptions, and tags** -- from route metadata
 
 Internal handlers (function names starting with `_`) are excluded from the spec.
 
 ## Providing metadata
 
-Attach metadata when registering a route by passing a two-element vector:
+Pass a namespace as the second element of the route's right argument. Stark merges it into the OpenAPI operation object as-is — any valid [OpenAPI operation field](https://spec.openapis.org/oas/v3.0.3#operation-object) passes through untouched.
 
 ```apl
 opts←(
     summary: 'Create a new item'
     tags: ('items'⋄)
-    body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
-        name:  (type: 'string')
-        price: (type: 'number')
-    ))
-    responses: 
-    (201 (type: 'object' ⋄ properties: (
-        id:    (type: 'integer')
-        name:  (type: 'string')
-        price: (type: 'number')
-    ))
+    requestBody: (
+        required: ⊂'true'
+        content: (⍙application⍙47⍙json: (schema: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
+            name:  (type: 'string')
+            price: (type: 'number')
+        ))))
     )
-    errors: ((404 'Not found')⋄)
+    responses: (
+        201 (type: 'object' ⋄ properties: (
+            id:    (type: 'integer')
+            name:  (type: 'string')
+            price: (type: 'number')
+        ))
+    )
 )
 
 '/items' router.Post ('CreateItem' opts)
 ```
 
-## Metadata reference
+Because field names must be valid APL names, use the `7162⌶` mangled form for keys containing special characters. `application/json` mangles to `⍙application⍙47⍙json`.
 
-| Key           | Type                          | Maps to OpenAPI                          |
-|---------------|-------------------------------|------------------------------------------|
-| `summary`     | String                        | `operation.summary`                      |
-| `description` | String                        | `operation.description`                  |
-| `tags`        | Vector of strings             | `operation.tags`                         |
-| `body`        | Schema namespace              | `operation.requestBody.content.application/json.schema` |
-| `response`    | `(statusCode schema)`         | `operation.responses.{code}.content.application/json.schema` |
-| `errors`      | Vector of `(code description)` | `operation.responses.{code}.description` |
+## Conveniences
+
+Stark applies four automatic transformations on top of the pass-through:
+
+| Convenience | Behaviour |
+|-------------|-----------|
+| `operationId` | Defaults to the handler function name if not provided |
+| Path parameters | Auto-extracted from `{param}` URL segments; always `in: 'path'`, `required: true`, `schema: {type: 'string'}` |
+| `responses` shorthand | A vector of `(statusCode schema)` pairs is converted to a mangled responses namespace |
+| Default 200 | If no `responses` are specified, a generic `200 Successful response` entry is added |
+
+**Everything else passes through untouched.** Use OpenAPI field names directly: `requestBody` (not `body`), `parameters`, `security`, `deprecated`, `externalDocs`, etc.
+
+## Root-level OpenAPI fields
+
+Use `router.Spec` to add fields at the root of the spec document alongside `openapi`, `info`, and `paths`:
+
+```apl
+router.Info←(title: 'My API' ⋄ version: '1.0.0')   ⍝ unchanged
+router.Spec←(
+    components: (securitySchemes: (bearerAuth: (type: 'http' ⋄ scheme: 'bearer')))
+    security: ,⊂(bearerAuth: ⍬)
+)
+```
 
 ## Default behaviour
 
 - Routes with no metadata still appear in the spec with a default `200 Successful response`.
-- Path parameters are always generated with `in: 'path'`, `required: true`, and `schema: {type: 'string'}`.
-- If no response metadata is provided, a generic 200 response entry is added.
+- Path parameters are always generated with `in: 'path'`, `required: true`, and `schema: {type: 'string'}`. Supply a `parameters` entry in the route opts to override or augment.
+- If no `responses` metadata is provided, a generic 200 response entry is added.
 
 ## Using with Swagger UI
 

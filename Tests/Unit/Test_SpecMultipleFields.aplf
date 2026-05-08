@@ -1,0 +1,12 @@
+ r←Test_SpecMultipleFields dummy;router;spec;server
+ ⍝ Multiple root-level fields from router.Spec all appear in the generated spec
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ router.Spec←(
+     servers: ,⊂(url: 'https://api.example.com' ⋄ description: 'Production')
+     security: ,⊂(bearerAuth: ⍬)
+ )
+ '/items' router.Get 'ListItems'
+ spec←router.OpenAPI
+ server←⊃spec.servers
+ r←(0<spec.⎕NC⊂'security')∧('https://api.example.com'≡server.url)

@@ -1,0 +1,7 @@
+ r←Test_SpecDefault dummy;router;spec
+ ⍝ Default Spec is empty — generated spec has no extra root fields
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ spec←router.OpenAPI
+ r←(0=spec.⎕NC⊂'components')∧(0=spec.⎕NC⊂'security')∧(0=spec.⎕NC⊂'servers')

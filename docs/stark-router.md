@@ -8,7 +8,8 @@ Stark is the core class of the framework. It manages route registration, request
 |--------------|---------|--------------------------------------------------------------|
 | `Handlers`   | Public  | Namespace (or class instance) where handler functions live   |
 | `ThreadMode` | Public  | Controls Jarvis threading -- `''`, `0`, `1`, `'DEBUG'`, `'AUTO'` |
-| `Info`       | Public  | Namespace with `title`, `version`, and optional `description` for the OpenAPI info block |
+| `Info`       | Public  | Namespace with `title`, `version`, and optional `description` for the OpenAPI `info` block |
+| `Spec`       | Public  | Namespace of additional root-level OpenAPI fields (`components`, `security`, `servers`, etc.); merged into the spec alongside `info` |
 | `Debug`      | Public  | Bitmask controlling debug stops and logging (see [Debug mode](#debug-mode)) |
 | `OnErrorFn`  | Public  | Name of a dyadic result-returning function in `Handlers` to call on handler errors (see [Error handling](#error-handling)) |
 
@@ -181,22 +182,23 @@ Metadata is a namespace passed alongside the handler name. It drives the [OpenAP
 
 ```apl
 schema←(
-    summary: 'List all items'
-    description: 'Returns every item in the database'
+    summary: 'Create a new item'
+    description: 'Creates an item and returns it'
     tags: ('items'⋄)
-    body: (type: 'object' ⋄ properties: (name: (type: 'string')))
+    requestBody: (
+        required: ⊂'true'
+        content: (⍙application⍙47⍙json: (schema: (type: 'object' ⋄ properties: (name: (type: 'string')))))
+    )
     responses: (201 (type: 'object' ⋄ properties: (id: (type: 'integer')))⋄)
 )
 '/items' router.Post ('CreateItem' schema)
 ```
 
-| Key           | Type                                      | Description                            |
-|---------------|-------------------------------------------|----------------------------------------|
-| `summary`     | String                                    | Short description of the operation     |
-| `description` | String                                    | Longer description                     |
-| `tags`        | Vector of strings                         | OpenAPI tags for grouping              |
-| `body`        | Schema namespace                          | Request body JSON Schema               |
-| `responses`   | `(statusCode responseNs)` OR a namespace  | Success response code and response schema       |
+The metadata namespace is merged directly into the OpenAPI operation object — any valid [OpenAPI operation field](https://spec.openapis.org/oas/v3.0.3#operation-object) passes through untouched. Use OpenAPI field names directly: `requestBody`, `parameters`, `security`, `deprecated`, etc.
+
+Because field names must be valid APL names, use the `7162⌶` mangled form for keys containing special characters. `application/json` mangles to `⍙application⍙47⍙json`.
+
+Stark applies a small number of conveniences automatically — see [OpenAPI generation](openapi.md#conveniences) for the full list.
 
 ## Debug mode
 
@@ -264,7 +266,7 @@ The function must be result-returning and dyadic (or ambivalent). Stark validate
 ## Inspection
 
 ```apl
-router.Routes        ⍝ returns a matrix of route descriptors (columns: method, path, handler, options)
+router.Routes        ⍝ returns a matrix of route descriptors (columns: method, path, handler, operation)
 router.OpenAPI       ⍝ returns the generated OpenAPI spec as a namespace
 ```
 
@@ -275,7 +277,7 @@ router.OpenAPI       ⍝ returns the generated OpenAPI spec as a namespace
 | 1      | Method    | `'GET'`           |
 | 2      | Path      | `'/items/{id}'`   |
 | 3      | Handler   | `'GetItem'`       |
-| 4      | Options   | metadata namespace or `()` |
+| 4      | Operation | pre-built OpenAPI operation namespace |
 
 ```apl
 ⍝ Count of registered routes

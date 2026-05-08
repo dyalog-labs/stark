@@ -25,6 +25,7 @@
     :Field Public  Handlers      ⍝ namespace where handler functions live
     :Field Public  ThreadMode←'' ⍝ DYALOG_JARVIS_THREAD: '' (Jarvis default), 0, 1, 'DEBUG', 'AUTO'
     :Field Public  Info          ⍝ namespace with title, version, description for OpenAPI info
+    :Field Public  Spec←()       ⍝ additional root-level OpenAPI fields (components, security, servers, etc.)
     :Field Public  Debug←0       ⍝ 0=all errors trapped, 1=stop on error in dispatch, 2=stop before user handler, 4=Jarvis framework debug, 8=Conga event logging, 16=stop before response, 32=Stark framework debug, 64=stop before routing
     :Field Public  OnErrorFn←''  ⍝ if set, called as err OnErrorFn req after Fail 500 instead of resignalling; err is a ⎕DMX clone
     :Field Private _routes       ⍝ vector of route descriptor namespaces
@@ -34,6 +35,7 @@
       :Access Public
       :Implements Constructor
       Info←(title: 'AStarkAPI' ⋄ version: '1.0.0')
+      Spec←()
       Handlers←1(86⌶)'⎕THIS'
       _routes←0 4⍴''
       _jarvis←⎕NEW (⊃⊃⎕CLASS ⎕THIS).##.Jarvis
@@ -96,12 +98,7 @@
               :EndIf
           :EndIf
       :EndIf
-      r←(
-        method
-        ,path
-        handler
-        options
-      )
+      r←method (,path) handler (_BuildOp method (,path) handler options)
       _routes⍪←r
     ∇
 
@@ -114,7 +111,8 @@
             ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Duplicate routes detected'))
         :EndIf
         routes[;2]←,¨routes[;2]
-        _routes⍪←4↑[2]routes,()
+        routes←{r←4↑⍵,⊂() ⋄ r[4]←_BuildOp r ⋄ r}¨↓routes
+        _routes⍪←↑routes
       :Else
         :For ns :In ,routes
           :If 9=ns.⎕NC'spec'
@@ -132,6 +130,43 @@
 
     ⍝ Replace {param} segments with a placeholder so structurally identical paths match
     _NormalizePath←{⍵/⍨~+\∊+/¯1 0⌽¨1 ¯1×↓'{}'∘.=⍵}
+
+    ∇ op←_BuildOp r;method;path;handler;opts;segs;varMask;param;pNS;pathParams
+      :Access Private Instance
+      (method path handler opts)←r
+
+      op←(responses: ())
+      op.operationId←handler
+
+      segs←'/'(≠⊆⊢)path
+      varMask←'{'=⊃¨segs
+      pathParams←⍬
+      :For param :In {1↓¯1↓⍵}¨varMask/segs
+          pathParams,←⊂(name: param ⋄ in: 'path' ⋄ required: (⊂'true') ⋄ schema: (type: 'string'))
+      :EndFor
+
+      :If 9=⎕NC'opts'
+          op ⎕NS opts                           ⍝ merge — user's OpenAPI fields pass through
+                                                ⍝ note: if opts had parameters, ⎕NS just copied it; we overwrite below
+          op.parameters←pathParams              ⍝ path params first, then append user-supplied extras
+          :If 2≤opts.⎕NC'parameters' ⋄ op.parameters,←opts.parameters ⋄ :EndIf
+
+          :If 2≤opts.⎕NC'responses'
+              :If ~(9.1=42∘⎕ATX)'opts.responses'
+                  op.responses←()
+                  op.responses ⎕VSET ↓⍉↑(_Mangle⍕¨⊃¨,⊆opts.responses) (2⊃¨,⊆opts.responses)
+              :EndIf
+          :EndIf
+      :Else
+          op.parameters←pathParams
+      :EndIf
+
+      :If 0=≢op.parameters ⋄ op.⎕EX'parameters' ⋄ :EndIf
+
+      :If 0=≢op.responses.⎕NL ¯2 ¯9
+          op.responses ⎕VSET ⊂(_Mangle'200') (description: 'Successful response')
+      :EndIf
+    ∇
 
     ∇ r←{value}DebugLevel level
     ⍝ monadic: return 1 if level is within Debug (powers of 2)
@@ -211,93 +246,17 @@
       result←_BuildOpenAPI
     ∇
 
-    ∇ spec←_BuildOpenAPI;paths;r;pathKey;pathNS;method;op;opts;segs;varMask;param;pNS;ct;code;schemaNS;e;respNS;respKey;jsonCtKey
+    ∇ spec←_BuildOpenAPI;paths;r;pathKey
       :Access Private Instance
-      ⍝ _Mangle mangles strings into valid APL names; ⎕JSON will unmangle them
-      spec←(
-        openapi: '3.0.3'
-        info: Info
-      )
-      jsonCtKey←_Mangle'application/json'
-
+      spec←(openapi: '3.0.3' ⋄ info: Info)
+      spec ⎕NS Spec
       paths←()
       :For r :In ↓_routes
-          :If '_'=⊃3⊃r ⋄ :Continue ⋄ :EndIf   ⍝ skip internal routes
-
-          ⍝ Get or create path object
+          :If '_'=⊃3⊃r ⋄ :Continue ⋄ :EndIf
           pathKey←_Mangle 2⊃r
-          :If 0=paths.⎕NC⊂pathKey
-              paths ⎕VSET ⊂pathKey ()
-          :EndIf
-          pathNS←paths ⎕VGET pathKey
-
-          ⍝ Build operation object
-          method←⎕C 1⊃r
-          op←(
-            parameters: ⍬
-            responses: ()
-          )
-
-          ⍝ Map metadata from route options
-          opts←4⊃r
-          op.operationId←3⊃r
-
-          ⍝ Extract path parameters from {param} segments
-          ⍝ If opts.params.{name} exists, its schema overrides the default 'string'
-          segs←'/'(≠⊆⊢)2⊃r
-          varMask←'{'=⊃¨segs
-          :For param :In {1↓¯1↓⍵}¨varMask/segs
-              :If 9=⎕NC'opts' ⋄ :AndIf 9=opts.⎕NC'params' ⋄ :AndIf 9=opts.params.⎕NC⊂param
-                  pNS←(name: param ⋄ in: 'path' ⋄ required: (⊂'true') ⋄ schema: (opts.params⍎param))
-              :Else
-                  pNS←(name: param ⋄ in: 'path' ⋄ required: (⊂'true') ⋄ schema: (type: 'string'))
-              :EndIf
-              op.parameters,←⊂pNS
-          :EndFor
-          :If 9=⎕NC'opts'
-              :If 2=opts.⎕NC'operationId'  ⋄ op.operationId←opts.operationId  ⋄ :EndIf
-              :If 2=opts.⎕NC'summary'      ⋄ op.summary←opts.summary          ⋄ :EndIf
-              :If 2=opts.⎕NC'description'  ⋄ op.description←opts.description  ⋄ :EndIf
-              :If 2≤opts.⎕NC'parameters'   ⋄ op.parameters,←opts.parameters   ⋄ :EndIf
-              :If 2=opts.⎕NC'tags'
-                :If 2=≡opts.tags
-                  op.tags←opts.tags
-                :Else
-                  ⎕SIGNAL ⊂'tags must be a vector of character vectors. Depth 2'
-                :EndIf
-              :EndIf
-              
-
-              ⍝ Request body schema
-              :If 9=opts.⎕NC'body'
-                  ct←() ⎕VSET ⊂jsonCtKey (schema: opts.body)
-                  op.requestBody←(required: (⊂'true') ⋄ content: ct)
-              :EndIf
-
-              ⍝ Responses: 
-              ⍝ Could be a vector of vectors (statusCode schema)
-              ⍝ Or
-              ⍝ Could be a namespace (but names are expeceted to be pre-mangled)
-              :If 2≤opts.⎕NC'responses'
-                  :If (9.1=42∘⎕ATX)'opts.responses'
-                    op.responses ⎕NS opts.responses
-                  :Else
-                    op.responses ⎕VSET ↓⍉↑(_Mangle⍕¨⊃¨,⊆opts.responses) (2⊃¨,⊆opts.responses)
-                  :EndIf
-              :EndIf
-
-          :EndIf
-          :If 0=≢op.parameters ⋄ op.⎕EX'parameters' ⋄ :EndIf
-
-          ⍝ Default 200 response if none specified
-          :If 0=≢op.responses.⎕NL ¯2 ¯9
-              respKey←_Mangle'200'
-              op.responses ⎕VSET ⊂respKey (description: 'Successful response')
-          :EndIf
-
-          pathNS ⎕VSET ⊂method op
+          :If 0=paths.⎕NC⊂pathKey ⋄ paths ⎕VSET ⊂pathKey () ⋄ :EndIf
+          (paths ⎕VGET pathKey) ⎕VSET ⊂(⎕C 1⊃r) (4⊃r)
       :EndFor
-
       spec.paths←paths
     ∇
 

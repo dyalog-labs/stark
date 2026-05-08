@@ -8,7 +8,8 @@ Stark is a modern REST API framework for Dyalog APL. It provides a clean, Fastif
 - **Path parameters** -- Use `{param}` syntax for dynamic URL segments like `/users/{id}`
 - **Query parameters** -- Access query string values through `req.QueryParams`
 - **Automatic OpenAPI generation** -- Get a full OpenAPI 3.0.3 spec at `/openapi.json` with no extra work
-- **Route metadata** -- Attach summaries, descriptions, tags, and schemas to routes for rich API documentation
+- **Route metadata** -- Any valid OpenAPI operation field passes through to the spec; attach summaries, tags, request bodies, responses, security, and more
+- **Root-level spec fields** -- Use `router.Spec` to add `components`, `security`, `servers`, and other root-level OpenAPI fields
 - **Minimal boilerplate** -- Define a handler, register a route, start the server
 
 ## Quick look
@@ -35,10 +36,14 @@ router.Start 8080
 
 ```
 APLSource/
-  Jarvis.aplc    ← HTTP server (Dyalog library)
-  Stark.aplc     ← Router / framework
+  Jarvis.aplc              ← HTTP server (Dyalog library)
+  Stark.aplc               ← Router / framework
 Examples/
-  ExampleApp.aplc ← Sample CRUD API
-  Run.apls        ← Script to launch the example
-docs/             ← This documentation
+  ExampleClass/
+    ExampleApp.aplc        ← Sample CRUD API (class-based)
+    Run.apls               ← Script to launch the example
+  ExampleNonClass/
+    APLSource/             ← Sample CRUD API (function-based)
+    Run.apls               ← Script to launch the example
+docs/                      ← This documentation
 ```

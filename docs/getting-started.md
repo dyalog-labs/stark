@@ -5,7 +5,7 @@
 The quickest way to try Stark is the included example application.
 
 ```bash
-cd Examples
+cd Examples/ExampleClass
 dyalogscript Run.apls
 ```
 

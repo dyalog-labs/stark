@@ -1,0 +1,8 @@
+ r←Test_SpecComponents dummy;router;spec
+ ⍝ router.Spec components field appears at root of generated spec
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ router.Spec←(components: (securitySchemes: (bearerAuth: (type: 'http' ⋄ scheme: 'bearer'))))
+ '/items' router.Get 'ListItems'
+ spec←router.OpenAPI
+ r←(0<spec.⎕NC⊂'components')∧('http'≡spec.components.securitySchemes.bearerAuth.type)

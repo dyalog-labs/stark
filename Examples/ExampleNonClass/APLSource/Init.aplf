@@ -21,10 +21,10 @@
   'POST' '/items' 'CreateItem' (
       summary: 'Create a new item'
       tags: ('items'⋄)
-      body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
+      requestBody: (required: ⊂'true' ⋄ content: (⍙application⍙47⍙json: (schema: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
           name:  (type: 'string')
           price: (type: 'number')
-      ))
+      )))))
       responses: (201 (type: 'object' ⋄ properties: (
           id:    (type: 'integer')
           name:  (type: 'string')
@@ -36,10 +36,10 @@
   'PUT' '/items/{id}' 'UpdateItem'(
       summary: 'Update an item'
       tags: ('items'⋄)
-      body: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
+      requestBody: (required: ⊂'true' ⋄ content: (⍙application⍙47⍙json: (schema: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
           name:  (type: 'string')
           price: (type: 'number')
-      ))
+      )))))
   )
   'DELETE' '/items/{id}' 'DeleteItem'(
       summary: 'Delete an item'
