@@ -1,6 +1,6 @@
 # Stark
 
-> **Internal project — not yet ready for public release.** I'm trying to gather feedback before opening this up more widely. I'd love to hear your thoughts. Although this project is "publicly" available on test.tatin.dev, it is not really meant for public use yet. 
+> **Not yet ready for production use.** Feedback is welcome — please open a GitHub issue if you have thoughts or run into problems.
 
 
 Stark is a routing layer on top of Jarvis that makes it straightforward to build REST APIs in Dyalog APL. Each route maps directly to a function, and removes the need for manual path parsing. Simply define your routes, write your handlers, and Stark takes care of dispatch. It also auto-generates an OpenAPI spec from your route definitions, giving you machine-readable documentation, Swagger UI, client generation, and tool integration for free.
@@ -56,15 +56,34 @@ Same three endpoints, but each route is a single line and each handler is a plai
 
 ## OpenAPI spec generation
 
-Stark auto-generates an OpenAPI spec from your registered routes, served at `/openapi.json`. You can add metadata, such as summaries, descriptions, tags, and request/response schemas, alongside each route definition:
+Stark auto-generates an OpenAPI spec from your registered routes, served at `/openapi.json`. Route metadata — summaries, tags, request body schemas, response schemas — is passed alongside each route definition and merged directly into the OpenAPI operation object:
 
 ```apl
-opts←(summary: 'Get an item by ID' ⋄ tags: ('items'⋄))
+opts←(
+    summary: 'Create an item'
+    tags: ('items'⋄)
+    requestBody: (
+        required: ⊂'true'
+        content: (⍙application⍙47⍙json: (schema: (type: 'object' ⋄ required: 'name' 'price' ⋄ properties: (
+            name:  (type: 'string')
+            price: (type: 'number')
+        ))))
+    )
+    responses: (
+        201 (type: 'object' ⋄ properties: (
+            id:    (type: 'integer')
+            name:  (type: 'string')
+            price: (type: 'number')
+        ))
+    )
+)
 routes←[
-    'GET' '/items/{id}' 'GetItem' opts
+    'POST' '/items' 'CreateItem' opts
 ]
 routes←router.Register routes
 ```
+
+Because APL names cannot contain `/`, content-type keys like `application/json` use the mangled form `⍙application⍙47⍙json`. The `responses` field accepts a shorthand vector of `(statusCode schema)` pairs. See the [OpenAPI docs](docs/openapi.md) for the full reference.
 
 This opens the door to Swagger UI, auto-generated client libraries (including APL clients), Postman collections, LLM tool integration, and any other tooling that consumes OpenAPI specs.
 
