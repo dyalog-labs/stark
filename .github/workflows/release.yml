@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Install Dependencies
         run: |
-          apt-get update && apt-get install -y nodejs zip unzip
+          apt-get update && apt-get install -y git nodejs zip unzip
 
       - uses: actions/checkout@v4
 
@@ -35,7 +35,7 @@ jobs:
           TATIN_API_KEY: ${{ secrets.TATIN_API_KEY }}
 
       - name: Create draft release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           draft: true
           files: Dist/bkaw-Stark-*.zip
