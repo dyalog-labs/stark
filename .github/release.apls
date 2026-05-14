@@ -7,6 +7,6 @@ package←∊⊃1 ⎕NPARTS⊃(⎕ninfo⍠('Wildcard' 1))'*.zip'
 apikey←(⊢2⎕NQ#'GetEnvironment',⊂)'TATIN_API_KEY'
 (⎕SE.Tatin.MyUserSettings.GetRegistry '[tatin-test]').api_key←apikey
 ⎕SE.Tatin.MyUserSettings.Save 1
-⎕SE.Tatin.PublishPackage (package '[tatin-test]')
+⎕SE.Tatin.PublishPackage (package '[tatin]')
 ⎕←'Published!!!'
 ⎕off 0
