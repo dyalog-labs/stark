@@ -29,7 +29,7 @@ jobs:
         run: dyalogscript Build.apls
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Stark
           path: Dist/bkaw-Stark-*.zip
