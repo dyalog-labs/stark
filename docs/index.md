@@ -1,5 +1,7 @@
 # Stark
 
+> **Not yet ready for production use.** Feedback is welcome — please open a GitHub issue if you have thoughts or run into problems.
+
 Stark is a modern REST API framework for Dyalog APL. It provides a clean, Fastify-style routing layer on top of [Jarvis](jarvis-server.md), Dyalog's HTTP server library.
 
 ## Features
