@@ -32,4 +32,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Stark
-          path: Dist/bkaw-Stark-*.zip
+          path: Dist/dyalog_labs-Stark-*.zip
