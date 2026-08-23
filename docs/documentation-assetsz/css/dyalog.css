@@ -1,0 +1,347 @@
+/* ==========================================================================
+   Dyalog documentation theme for Zensical
+   Palette from https://dyalogprod.gos.dyalog.com/about/brand-guidelines/
+   Primary colours are ten-step scales: 10 = lightest, 100 = darkest.
+   The base (unmodified) hex sits at the step matching its own lightness.
+   ========================================================================== */
+
+/* --- Fonts ---------------------------------------------------------------- */
+
+@font-face {
+  font-family: "APL387";
+  src: url("../fonts/APL387/APL387.woff2") format("woff2");
+  font-display: swap;
+}
+
+/* Body text is a system stack (see --md-text-font below). Be Vietnam Pro is
+   no longer loaded here; the .ttf files under fonts/BeVietnamPro/ are now
+   orphaned and can be deleted at the operator's discretion.               */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../fonts/JetBrainsMono/JetBrainsMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../fonts/JetBrainsMono/JetBrainsMono-Italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../fonts/JetBrainsMono/JetBrainsMono-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../fonts/JetBrainsMono/JetBrainsMono-BoldItalic.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* --- Brand palette -------------------------------------------------------- */
+/* Scheme-independent. Nothing here is applied directly; the two scheme blocks
+   below pick from these so a colour is only ever defined once.               */
+
+:root {
+  /* Retina Searing Orange — role: Action (base #FF6A13 at step 50) */
+  --dyalog-orange-10:  #FFE1D0;
+  --dyalog-orange-20:  #FFC3A1;
+  --dyalog-orange-30:  #FFA671;
+  --dyalog-orange-40:  #FF8842;
+  --dyalog-orange-50:  #FF6A13;
+  --dyalog-orange-60:  #D65A13;
+  --dyalog-orange-70:  #AD4913;
+  --dyalog-orange-80:  #843914;
+  --dyalog-orange-90:  #5C2914;
+  --dyalog-orange-100: #331814;
+
+  /* Retina Soothing Lavender — role: Accent (base #685BC7 at step 50) */
+  --dyalog-lavender-10:  #E1DEF4;
+  --dyalog-lavender-20:  #C3BDE9;
+  --dyalog-lavender-30:  #A49DDD;
+  --dyalog-lavender-40:  #867CD2;
+  --dyalog-lavender-50:  #685BC7;
+  --dyalog-lavender-60:  #584DA9;
+  --dyalog-lavender-70:  #493F8B;
+  --dyalog-lavender-80:  #292450;
+  --dyalog-lavender-90:  #292450;
+  --dyalog-lavender-100: #1A1632;
+
+  /* Midnight — role: Depth (base #003B5C at step 90) */
+  --dyalog-midnight-10:  #E3E9ED;
+  --dyalog-midnight-20:  #C6D3DB;
+  --dyalog-midnight-30:  #AABEC9;
+  --dyalog-midnight-40:  #8EA8B7;
+  --dyalog-midnight-50:  #7192A4;
+  --dyalog-midnight-60:  #557C92;
+  --dyalog-midnight-70:  #396780;
+  --dyalog-midnight-80:  #1C516E;
+  --dyalog-midnight-90:  #003B5C;
+  --dyalog-midnight-100: #052238;
+
+  /* Gunmetal — role: Neutral Backbone (base #2A3244 at step 80) */
+  --dyalog-gunmetal-10:  #E4E5E8;
+  --dyalog-gunmetal-20:  #CACCD0;
+  --dyalog-gunmetal-30:  #AFB2B9;
+  --dyalog-gunmetal-40:  #9498A2;
+  --dyalog-gunmetal-50:  #7A7F8A;
+  --dyalog-gunmetal-60:  #5F6573;
+  --dyalog-gunmetal-70:  #454C5B;
+  --dyalog-gunmetal-80:  #2A3244;
+  --dyalog-gunmetal-90:  #1F2434;
+  --dyalog-gunmetal-100: #151624;
+
+  /* Neutrals — the fixed floor and ceiling, not part of a scale */
+  --dyalog-lotion: #F2F1F0;
+  --dyalog-raisin: #232222;
+
+  /* Status — deliberately outside the brand palette. Base passes on Raisin,
+     tint passes on Raisin; base Error passes on white but not on Raisin. */
+  --dyalog-success:      #2ECA7C;
+  --dyalog-success-tint: #E6F9EF;
+  --dyalog-warning:      #F3DB4C;
+  --dyalog-warning-tint: #FEFBEA;
+  --dyalog-error:        #CA2E51;
+  --dyalog-error-tint:   #F9E6EA;
+
+  /* Typography. System stack for body text — the readme's own choice, and the
+     brand manager's preferred direction over any bundled webfont. Zensical
+     appends its own fallback tail so a shorter value would still work; this
+     spelling is verbatim from the readme for consistency. */
+  --md-text-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* Chained: JetBrains Mono covers the common APL glyphs, but anything rarer
+     falls through to APL387 rather than a system font. Both advance 0.600 em,
+     so a fallen-back glyph still holds its column. */
+  --md-code-font: "JetBrains Mono", "APL387";
+}
+
+/* --- Readme-derived palette ---------------------------------------------- */
+/* Taken from Dyalog's own dyalog_readme.htm — the reference the user pointed
+   at for colour direction. These are named tokens (not scale steps) because
+   they are curated choices, not mathematical derivations: the link and
+   link-hover colours in particular sit off the primary scales.             */
+
+:root {
+  /* Light */
+  --readme-l-bg:          #FFFFFF;
+  --readme-l-surface:     #F8F9FB;  /* alt row, subtle wash */
+  --readme-l-surface-alt: #F1F3F6;  /* code wells, table headers */
+  --readme-l-border:      #E4E7EB;
+  --readme-l-border-soft: #EEF0F3;
+  --readme-l-text:        #232222;  /* Raisin */
+  --readme-l-muted:       #57606A;
+  --readme-l-heading:     #2A3244;  /* Gunmetal 80 */
+  --readme-l-link:        #CA4E00;  /* deeper/warmer than Orange 70 */
+  --readme-l-hover:       #526CFE;  /* cool blue — temperature-contrast accent */
+
+  /* Dark. Page is Raisin — a warm dark, not the cool Gunmetal we had before. */
+  --readme-d-bg:          #232222;  /* Raisin */
+  --readme-d-surface:     #1C1B1B;  /* darker than bg — sunken */
+  --readme-d-surface-alt: #2C2B2B;  /* lighter than bg — raised */
+  --readme-d-border:      #3A3838;
+  --readme-d-border-soft: #2C2B2B;
+  --readme-d-text:        #EBE8E6;  /* warm off-white, not pure Lotion */
+  --readme-d-muted:       #9A9694;
+  --readme-d-heading:     #F5F2EF;
+  --readme-d-link:        #FF8A4C;  /* lifted warm orange */
+  --readme-d-hover:       #7C9BFF;  /* lifted cool blue */
+}
+
+/* --- Light scheme --------------------------------------------------------- */
+/* The readme has no coloured header bar: page and header share white, the
+   orange logo is the identity marker. Text is Raisin (warm), links are a
+   deeper warmer orange than Orange 70 (#CA4E00 vs #AD4913), hover is a cool
+   blue — a temperature contrast that pops against the warm palette without
+   introducing another warm colour that would clash with the brand orange.  */
+
+[data-md-color-scheme="default"] {
+  /* Bar shares the page background — white. Foreground text on it is Raisin,
+     the body text colour, so the header reads as page chrome, not a band.
+     The orange logo is 2.87:1 on white (below WCAG's 3:1 non-text floor);
+     this matches Dyalog's own dyalog_readme.htm and takes identity over
+     strict WCAG. */
+  --md-primary-fg-color:        var(--readme-l-bg);
+  --md-primary-fg-color--light: var(--readme-l-surface);
+  --md-primary-fg-color--dark:  var(--readme-l-surface-alt);
+  --md-primary-bg-color:        var(--readme-l-text);
+
+  /* Accent = link hover. Cool blue #526CFE on white is ~4.1:1 (passes AA
+     large / 3:1 non-text; borderline for AA text). Kept because the readme
+     uses it as a temperature-contrast accent, not a body-text colour. */
+  --md-accent-fg-color:         var(--readme-l-hover);
+  --md-accent-fg-color--transparent: #526CFE1a;
+  --md-accent-bg-color:         var(--readme-l-bg);
+
+  --md-default-fg-color:        var(--readme-l-text);
+  --md-default-bg-color:        var(--readme-l-bg);
+
+  /* Links: #CA4E00 on white is ~5.4:1 (AA). Deeper and warmer than the
+     mathematical Orange 70 step — the readme's curated choice. */
+  --md-typeset-a-color:         var(--readme-l-link);
+
+  --md-code-bg-color:           var(--readme-l-surface-alt);
+  --md-code-fg-color:           var(--readme-l-text);
+
+  /* Header sits on the page: same background as the body, thin rule to
+     delimit it once the page scrolls beneath. */
+  --md-header-border-color:     var(--readme-l-border);
+
+  /* Search button chrome on a white bar: light surface tint, slightly darker
+     on hover, and a very subtle tag ground. */
+  --md-search-button-bg:        var(--readme-l-surface-alt);
+  --md-search-button-bg-hover:  var(--readme-l-border);
+  --md-search-tag-bg:           var(--readme-l-border);
+}
+
+/* --- Dark scheme ---------------------------------------------------------- */
+/* Warm dark: page is Raisin (#232222), not Gunmetal. The previous cool blue-
+   grey felt cold against the warm orange brand; Raisin picks up warmth from
+   the body text and the logo. Surface tokens step slightly darker (sunken)
+   and slightly lighter (raised) around the Raisin base, so code wells and
+   the header can differentiate without introducing a different hue.        */
+
+[data-md-color-scheme="slate"] {
+  /* Bar is the "raised" surface — one shade lighter than the page (#2C2B2B
+     vs #232222). Foreground is the warm off-white body text. Orange logo on
+     Raisin is ~5.7:1, passing 3:1 non-text comfortably. */
+  --md-primary-fg-color:        var(--readme-d-surface-alt);
+  --md-primary-fg-color--light: var(--readme-d-border);
+  --md-primary-fg-color--dark:  var(--readme-d-bg);
+  --md-primary-bg-color:        var(--readme-d-text);
+
+  /* Accent = link hover. Cool blue #7C9BFF on Raisin is ~6.7:1 (AAA large,
+     AA text). */
+  --md-accent-fg-color:         var(--readme-d-hover);
+  --md-accent-fg-color--transparent: #7C9BFF1a;
+  --md-accent-bg-color:         var(--readme-d-text);
+
+  /* Warm off-white on Raisin is ~12.8:1 (AAA). */
+  --md-default-fg-color:        var(--readme-d-text);
+  --md-default-bg-color:        var(--readme-d-bg);
+
+  /* Links: #FF8A4C on Raisin is ~6:1 (AA). Lifted warmer orange for legibility
+     without leaving the warm family. */
+  --md-typeset-a-color:         var(--readme-d-link);
+
+  /* Code wells recess (sunken surface, #1C1B1B — darker than the page). */
+  --md-code-bg-color:           var(--readme-d-surface);
+  --md-code-fg-color:           var(--readme-d-text);
+
+  --md-header-border-color:     var(--readme-d-border);
+
+  /* Search button chrome on a Raisin bar: raised surface tint, slightly
+     lighter on hover, and a matching tag ground. */
+  --md-search-button-bg:        var(--readme-d-surface-alt);
+  --md-search-button-bg-hover:  var(--readme-d-border);
+  --md-search-tag-bg:           var(--readme-d-border);
+}
+
+/* --- Header — page-integrated --------------------------------------------- */
+/* No coloured banner, no drop shadow. The wordmark sits directly on the page
+   background, separated from content by a single hairline rule so it still
+   reads as a header once content scrolls beneath. Classic Zensical adds
+   `.md-header--shadow` on scroll; both variants are cleared. Padding and
+   logo height are lifted so the wordmark has room to breathe.              */
+
+.md-header,
+.md-header--shadow {
+  box-shadow: none;
+  background-color: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  border-bottom: 1px solid var(--md-header-border-color);
+}
+
+/* Room to breathe: only vertical padding on the inner flex container. The
+   inner uses .md-grid (max-width 61rem, centred) — the same grid the content
+   and sidebars sit on — so any horizontal padding here pushes the wordmark
+   inward from the gutter while the sidebar below stays at the grid edge,
+   producing a visible left-edge misalignment between header and menu. */
+.md-header__inner {
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+.md-header__button.md-logo {
+  margin: 0.15rem;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 1.2rem;
+  width: auto;
+}
+
+/* Search button. Zensical's default paints it with a #00000042 dark overlay,
+   which was tuned for strong primary-coloured bars (dark tint on orange).
+   On a white/Raisin bar that overlay reads as a smudge, so replace it with a
+   subtle surface tint per scheme, matched to each side's palette.          */
+
+.md-search__button {
+  background-color: var(--md-search-button-bg);
+  color: var(--md-default-fg-color);
+}
+.md-search__button:hover,
+.md-search__button:focus {
+  background-color: var(--md-search-button-bg-hover);
+  color: var(--md-default-fg-color);
+}
+.md-search__button::before {
+  background-color: var(--md-default-fg-color);
+}
+.md-search__button::after {
+  background: var(--md-search-tag-bg);
+  color: var(--md-default-fg-color);
+}
+
+/* --- Footer build stamp --------------------------------------------------- */
+/* The copyright line wraps its build date and commit in <a class="copy"> and
+   copies them on click. The MkDocs assets pair this with a ⿻/⿴ pseudo-element,
+   but that glyph is in none of the bundled fonts — and their own CSS paints it
+   in the background colour, hiding it — so the cursor carries the affordance. */
+
+.copy {
+  cursor: grab;
+}
+.copy:active {
+  cursor: grabbing;
+}
+
+/* --- Nav drawer logo ------------------------------------------------------ */
+/* The mobile drawer repeats the header logo. Its title bar defaults to the page
+   background — light in default, dark in slate — which does not always match
+   the wordmark's ground. Paint it with the header's colours so drawer and
+   header stay visually paired. Scoped to the drawer breakpoint so the desktop
+   sidebar title is left alone.                                              */
+
+@media screen and (max-width: 76.234375em) {
+  .md-nav--primary .md-nav__title {
+    color: var(--md-primary-bg-color);
+    background-color: var(--md-primary-fg-color);
+  }
+}
+
+
+/* --- APL ------------------------------------------------------------------ */
+/* APL387 is the APL face; JetBrains Mono is the general code face. Applies to ```apl fences and to
+   inline `code` marked with the .apl class. APL385 Unicode is named as a local
+   fallback for readers who already have it installed.
+
+   APL387 also ships optional OpenType features, off by default:
+     ss01  dotless zeros
+     ss02  centred tilde in the nand/nor glyphs
+     cv01  diaeresis and dot composition
+   Enable with e.g. font-feature-settings: "ss01".                           */
+
+.language-apl code,
+.language-APL code,
+.apl {
+  font-family: "APL387", "APL385 Unicode", "JetBrains Mono", monospace;
+}

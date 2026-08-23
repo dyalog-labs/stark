@@ -56,11 +56,19 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install MkDocs
-        run: pip install mkdocs-material
+      - name: Install Zensical
+        run: pip install zensical==0.0.57
+
+      - name: Stamp build info
+        run: |
+          sed -i \
+            -e "s|[$]CURRENT_YEAR|$(date -u +%Y)|g" \
+            -e "s|[$]BUILD_DATE|$(date -u +%Y-%m-%d)|g" \
+            -e "s|[$]GIT_INFO|${GITHUB_SHA::7}|g" \
+            zensical.toml
 
       - name: Build docs
-        run: mkdocs build
+        run: zensical build --clean
 
       - uses: actions/configure-pages@v5
 

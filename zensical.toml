@@ -1,0 +1,84 @@
+[project]
+site_name = "Stark"
+site_description = "A modern REST API framework for Dyalog APL"
+site_url = "https://dyalog-labs.github.io/stark/"
+
+repo_url = "https://github.com/dyalog-labs/stark"
+repo_name = "dyalog-labs/stark"
+
+# House style: the generator credit lives here and theme.extra.generator is off.
+# The CURRENT_YEAR / BUILD_DATE / GIT_INFO placeholders below are stamped at
+# build time by the "Stamp build info" step in .github/workflows/release.yml.
+# Local builds show them unsubstituted; that is expected.
+copyright = 'Made with <a href="https://zensical.org/" target="_blank" rel="noopener"><strong>Zensical</strong></a><br/>Copyright &copy; 1982-$CURRENT_YEAR <strong><a href="https://dyalog.com" target="_blank" rel="noopener">Dyalog Limited</a></strong> (<a href="#" class="copy" onclick="navigator.clipboard.writeText(innerText);return false" title="Click to copy!">$BUILD_DATE $GIT_INFO</a>).<br/>Except where otherwise noted, content on this site is licensed under a <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener"><strong>Creative Commons Attribution 4.0 International</strong></a> licence.'
+
+extra_css = ["documentation-assetsz/css/dyalog.css"]
+
+nav = [
+  { "Home" = "index.md" },
+  { "Getting Started" = "getting-started.md" },
+  { "Stark Router" = "stark-router.md" },
+  { "OpenAPI Generation" = "openapi.md" },
+  { "Jarvis Server" = "jarvis-server.md" },
+  { "Examples" = "examples.md" },
+]
+
+[project.theme]
+# Classic drives the header and accents from --md-primary-*/--md-accent-*, which
+# is what dyalog.css sets. The modern variant is deliberately neutral and uses
+# the primary colour in only two places, so the brand barely shows.
+variant = "classic"
+# Orange wordmark in both schemes — matches Dyalog's own dyalog_readme.htm,
+# where the logo is orange on both a white light background and a Raisin dark
+# background. Light mode is 2.87:1 (below WCAG's 3:1 non-text floor); this is
+# a deliberate identity-over-WCAG choice. Dark mode is ~5.7:1, comfortable.
+logo = "documentation-assetsz/images/dyalog-logo_orange.svg"
+favicon = "documentation-assetsz/images/dyalog-ide-cube-2025.2.svg"
+# Fonts are self-hosted by documentation-assetsz; skip the Google Fonts request
+font = false
+features = [
+  "content.code.copy",
+  "content.tabs.link",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.path",
+  "navigation.sections",
+  "navigation.tracking",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.extra]
+# The generator credit is carried in `copyright` instead
+generator = false
+
+[project.markdown_extensions]
+abbr = {}
+admonition = {}
+attr_list = {}
+footnotes = {}
+md_in_html = {}
+pymdownx.details = {}
+pymdownx.keys = {}
+tables = {}
+toc.permalink = true
+toc.title = "On this page"
+pymdownx.highlight.anchor_linenums = true
+# Emits .language-apl on code blocks so dyalog.css can switch to the APL font
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.superfences = {}
+pymdownx.tabbed.alternate_style = true
