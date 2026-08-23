@@ -1,0 +1,89 @@
+/* Dyalog theme for Zensical (classic variant).
+   Palette from dyalog_readme.htm; body uses a system stack. */
+
+@font-face {
+  font-family: "APL387";
+  src: url("../fonts/APL387/APL387.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("../fonts/IBMPlexSans/IBMPlexSans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("../fonts/IBMPlexSans/IBMPlexSans-Italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("../fonts/IBMPlexSans/IBMPlexSans-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("../fonts/IBMPlexSans/IBMPlexSans-BoldItalic.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --md-text-font:
+    "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
+    Arial, sans-serif;
+}
+
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #ffffff;
+  --md-primary-bg-color: #232222;
+  --md-accent-fg-color: #526cfe;
+  --md-default-fg-color: #232222;
+  --md-default-bg-color: #ffffff;
+  --md-typeset-a-color: #ca4e00;
+  --md-code-bg-color: #f1f3f6;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #232222;
+  --md-primary-bg-color: #ebe8e6;
+  --md-accent-fg-color: #7c9bff;
+  --md-default-fg-color: #ebe8e6;
+  --md-default-bg-color: #232222;
+  --md-typeset-a-color: #ff8a4c;
+  --md-code-bg-color: #1c1b1b;
+}
+
+.md-header,
+.md-header--shadow {
+  box-shadow: none;
+  border-bottom: 1px solid var(--md-code-bg-color);
+}
+.md-header__inner {
+  padding: 0.4rem 0;
+}
+.md-header__button.md-logo {
+  margin: 0.15rem;
+}
+.md-header__button.md-logo img {
+  height: 1.2rem;
+  width: auto;
+}
+
+/* Zensical's default paints the search button with a #00000042 overlay,
+   which reads as a smudge on a page-coloured bar. */
+.md-search__button {
+  background-color: var(--md-code-bg-color);
+}
+
+.language-apl code,
+.apl {
+  font-family: "APL387", monospace;
+}
