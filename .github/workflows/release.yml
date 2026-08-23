@@ -79,17 +79,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-00
-01
-11
-10
-00
-
-000
-001
-011
-010
-110
-111
-101
-100

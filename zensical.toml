@@ -10,7 +10,7 @@ repo_name = "dyalog-labs/stark"
 # The CURRENT_YEAR / BUILD_DATE / GIT_INFO placeholders below are stamped at
 # build time by the "Stamp build info" step in .github/workflows/release.yml.
 # Local builds show them unsubstituted; that is expected.
-copyright = 'Made with <a href="https://zensical.org/" target="_blank" rel="noopener"><strong>Zensical</strong></a><br/>Copyright &copy; 1982-$CURRENT_YEAR <strong><a href="https://dyalog.com" target="_blank" rel="noopener">Dyalog Limited</a></strong> (<a href="#" class="copy" onclick="navigator.clipboard.writeText(innerText);return false" title="Click to copy!">$BUILD_DATE $GIT_INFO</a>).<br/>Except where otherwise noted, content on this site is licensed under a <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener"><strong>Creative Commons Attribution 4.0 International</strong></a> licence.'
+copyright = 'Made with <a href="https://zensical.org/" target="_blank" rel="noopener"><strong>Zensical</strong></a><br/>Copyright &copy; 1982-$CURRENT_YEAR <strong><a href="https://dyalog.com" target="_blank" rel="noopener">Dyalog Limited</a></strong> (<a href="#" class="copy" onclick="navigator.clipboard && navigator.clipboard.writeText(this.textContent.trim());return false" title="Click to copy!">$BUILD_DATE $GIT_INFO</a>).<br/>Except where otherwise noted, content on this site is licensed under a <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener"><strong>Creative Commons Attribution 4.0 International</strong></a> licence.'
 
 extra_css = ["documentation-assetsz/css/dyalog.css"]
 

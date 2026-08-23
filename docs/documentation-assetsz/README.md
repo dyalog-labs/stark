@@ -15,8 +15,8 @@ fonts and images are carried over from the MkDocs asset set.
 | ------------------- | ------------------------------------------------------------ |
 | `css/dyalog.css`    | The whole theme: fonts, brand tokens, light + dark schemes    |
 | `fonts/APL387`      | [APL387](https://github.com/Dyalog/APL387) — the APL glyphs, used for `apl` code fences |
-| `fonts/BeVietnamPro`| Body text, weights 400/500/600/700 plus italics               |
-| `fonts/JetBrainsMono` | Non-APL code, weights 400/700 plus italics                  |
+| `fonts/IBMPlexSans` | Body text, weights 400/700 plus italics                       |
+| `fonts/JetBrainsMono` | Non-APL code (font files included; not referenced by `css/dyalog.css` yet) |
 | `images`            | Favicon / logo cube                                           |
 
 Only the font weights the stylesheet actually declares are included, rather
