@@ -83,6 +83,31 @@
   background-color: var(--md-code-bg-color);
 }
 
+/* Footer build-stamp: a real <button> (see zensical.toml) painted down to read
+   as inline text. Keep the focus ring — it is the only cue a keyboard user has
+   that the stamp is operable. */
+.md-copyright .copy {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--md-typeset-a-color);
+  cursor: pointer;
+}
+.md-copyright .copy:hover,
+.md-copyright .copy:focus-visible {
+  color: var(--md-accent-fg-color);
+}
+.md-copyright .copy:focus-visible {
+  outline: 2px solid currentcolor;
+  outline-offset: 2px;
+}
+.md-copyright .copy-status:not(:empty)::before {
+  content: " — ";
+}
+
 .language-apl code,
 .apl {
   font-family: "APL387", monospace;
