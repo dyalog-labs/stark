@@ -8,11 +8,17 @@
     :Field Public Instance Body←''
     :Field Public Instance PathParams
     :Field Public Instance Response
+    :Field Public Instance Headers←0 2⍴⊂''
+    :Field Public Instance Cookies←0 2⍴⊂''
+    :Field Public Instance UserID←''
+    :Field Public Instance Password←''
 
     ∇ make args
       :Access Public
       :Implements Constructor
-      (Method Endpoint)←args
+      ⍝ args: method endpoint [headers], headers an N×2 matrix of name/value pairs
+      (Method Endpoint)←2↑args
+      :If 2<≢args ⋄ Headers←3⊃args ⋄ :EndIf
       Payload←⎕NS ''
       PathParams←⎕NS ''
       Response←⎕NS ''
@@ -32,6 +38,21 @@
       :If status≠0
           Response.Status←status
       :EndIf
+    ∇
+
+    ∇ r←GetHeader name
+      :Access Public
+      r←((⎕C Headers[;1])⍳⊂⎕C name)⊃Headers[;2],⊂''
+    ∇
+
+    ∇ {(name value)}←name SetHeader value
+      :Access Public
+      Response.Headers⍪←name(∊⍕value)
+    ∇
+
+    ∇ value←GetCookie name
+      :Access Public
+      value←(Cookies[;1]⍳⊆,name)⊃Cookies[;2],⊂''
     ∇
 
 :EndClass

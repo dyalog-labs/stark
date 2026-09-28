@@ -1,0 +1,5 @@
+ r←Test_AuthBadToken dummy;h;resp
+ h←#.HttpCommand.New 'get' (BaseURL,'/me')
+ (h.AuthType h.Auth)←'Bearer' 'wrong'
+ resp←h.Run
+ r←401=resp.HttpStatus

@@ -1,0 +1,9 @@
+ r←Test_AuthGlobalDefault401 dummy;router;req;result
+ ⍝ Spec.security applies to routes that don't set their own; no credential gives 401 + challenge
+ router←#.Mocks.NewAuthRouter
+ router.Spec.security←,(bearerAuth:⍬)
+ '/me' router.Get 'WhoAmI'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me')
+ result←router._Dispatch req
+ r←(401=req.Response.Status)∧('Not authenticated'≡result.detail)
+ r∧←(⊂'WWW-Authenticate' 'Bearer')∊↓req.Response.Headers

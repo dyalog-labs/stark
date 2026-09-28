@@ -1,0 +1,8 @@
+ r←Test_AuthHook403 dummy;router;req;result
+ ⍝ A hook that calls req.Fail 403 keeps that status
+ router←#.Mocks.NewAuthRouter
+ router.Spec.security←,(bearerAuth:⍬)
+ '/me' router.Get 'WhoAmI'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer forbidden'))
+ result←router._Dispatch req
+ r←(403=req.Response.Status)∧('Forbidden'≡result.detail)

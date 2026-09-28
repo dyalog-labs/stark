@@ -1,0 +1,8 @@
+ r←Test_AuthDuplicateScheme dummy;router
+ router←#.Mocks.NewAuthRouter
+ :Trap 11
+     router.AddSecurity 'bearerAuth' (type:'http' ⋄ scheme:'bearer') 'CheckBearer'
+     r←0
+ :Else
+     r←1
+ :EndTrap

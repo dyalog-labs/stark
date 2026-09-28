@@ -28,8 +28,10 @@
     :Field Public  Spec←()       ⍝ additional root-level OpenAPI fields (components, security, servers, etc.)
     :Field Public  Debug←0       ⍝ 0=all errors trapped, 1=stop on error in dispatch, 2=stop before user handler, 4=Jarvis framework debug, 8=Conga event logging, 16=stop before response, 32=Stark framework debug, 64=stop before routing
     :Field Public  OnErrorFn←''  ⍝ if set, called as err OnErrorFn req after Fail 500 instead of resignalling; err is a ⎕DMX clone
+    :Field Public  DocsSecurity←⍬ ⍝ security requirement for /openapi.json; ⍬ = public
     :Field Private _routes       ⍝ vector of route descriptor namespaces
     :Field Private _jarvis       ⍝ underlying Jarvis instance
+    :Field Private _security     ⍝ N×3 matrix of (scheme name, OpenAPI scheme definition, hook name)
 
     ∇ Make0
       :Access Public
@@ -38,6 +40,7 @@
       Spec←()
       Handlers←1(86⌶)'⎕THIS'
       _routes←0 4⍴''
+      _security←0 3⍴''
       _jarvis←⎕NEW (⊃⊃⎕CLASS ⎕THIS).##.Jarvis
       '/openapi.json' Get '_OpenAPIHandler'
     ∇
@@ -212,7 +215,7 @@
     }
 
     ⍝ Route an incoming Jarvis request to the matching handler
-    ∇ result←_Dispatch req;routes;r;matched;pp;m;err;i
+    ∇ result←_Dispatch req;routes;r;matched;pp;m;i;ok
       :Access Public Instance
       stopIf DebugLevel 64                          ⍝ stop before routing
       routes←(_routes[;1] ∊⍥⎕C ⊂req.Method)⌿_routes
@@ -238,25 +241,182 @@
       r←r[i;]
       req.PathParams←i⊃pp
       req.QueryParams←() ⎕VSET ↓{⍵≡0 2⍴⍬:0 2⍴⍬⋄n←⍵⋄n[;1]←0(7162⌶)n[;1]⋄n}req.QueryParams
+      :If DebugLevel 32
+      :AndIf '_'≠⊃3⊃r
+          ⎕←'STARK: ',req.Method,' ',req.Endpoint,' → ',3⊃r
+      :EndIf
+      :Trap 0 DebugLevel 1                 ⍝ disable trap if bit 1 set (stop on error)
+          (ok result)←r _Authenticate req
+      :Else
+          result←_HandleError req ⋄ :Return
+      :EndTrap
+      →ok↓0
       :If '_'=⊃3⊃r
           result←(⍎3⊃r)req          ⍝ internal handler (on Stark)
       :Else
-          :If DebugLevel 32
-              ⎕←'STARK: ',req.Method,' ',req.Endpoint,' → ',3⊃r
-          :EndIf
           stopIf DebugLevel 2              ⍝ stop before user handler
           :Trap 0 DebugLevel 1             ⍝ disable trap if bit 1 set (stop on error)
               result←(Handlers⍎3⊃r)req
           :Else
-              :If ~0∊⍴OnErrorFn
-                  err←()⎕NS ⎕DMX          ⍝ deep clone ⎕DMX before req.Fail may alter it
-                  req.Fail 500
-                  result←err(Handlers⍎OnErrorFn)req
-              :Else
-                  ⎕SIGNAL⊂⎕DMX.(('EN'EN)('EM'EM)('Message'(OSError{⍵,2⌽(×≢⊃⍬⍴2⌽⍺,⊂'')/'") ("',⊃⍬⍴2⌽⍺}Message))) ⍝ RESIGNAL
-              :EndIf
+              result←_HandleError req
           :EndTrap
       :EndIf
+    ∇
+
+    ⍝ Handle an error trapped in a hook or handler: call OnErrorFn if set, otherwise resignal
+    ∇ result←_HandleError req;err
+      :If ~0∊⍴OnErrorFn
+          err←()⎕NS ⎕DMX          ⍝ deep clone ⎕DMX before req.Fail may alter it
+          req.Fail 500
+          result←err(Handlers⍎OnErrorFn)req
+      :Else
+          ⎕SIGNAL⊂⎕DMX.(('EN'EN)('EM'EM)('Message'(OSError{⍵,2⌽(×≢⊃⍬⍴2⌽⍺,⊂'')/'") ("',⊃⍬⍴2⌽⍺}Message))) ⍝ RESIGNAL
+      :EndIf
+    ∇
+
+    ⍝ Authentication
+    ⍝ router.AddSecurity 'bearerAuth' (type:'http' ⋄ scheme:'bearer') 'CheckBearer'
+    ⍝ Registers an OpenAPI security scheme and the Handlers function that checks it.
+    ⍝ The hook is called as  user←auth Hook req  where auth has .scheme .credential .scopes;
+    ⍝ it returns the authenticated user (any value but 0) or 0 to reject.
+
+    ∇ AddSecurity(name definition hook)
+      :Access Public Instance
+      :If (⊂,name)∊_security[;1]
+          ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Security scheme "',name,'" is already registered'))
+      :EndIf
+      _security⍪←(,name) definition (,hook)
+    ∇
+
+    ⍝ The security requirement that applies to a route, as a vector of requirement namespaces
+    ⍝ route security → Spec.security → public; internal routes use DocsSecurity
+    ∇ reqs←_Requirements r
+      :If '_'=⊃3⊃r
+          reqs←DocsSecurity
+      :ElseIf 0≠(4⊃r).⎕NC'security'
+          reqs←(4⊃r).security
+      :ElseIf 0≠Spec.⎕NC'security'
+          reqs←Spec.security
+      :Else
+          reqs←⍬
+      :EndIf
+      reqs←,reqs
+    ∇
+
+    ⍝ Required scopes for one scheme in a requirement namespace, as a vector of strings
+    _Scopes←{s←⍺⍎⍵ ⋄ 0=≢s:⍬ ⋄ ,⊆s}
+
+    ⍝ Extract the credential a scheme definition describes; '' if the request doesn't carry one
+    ∇ cred←def _Credential req;type;scheme;auth;in;name
+      type←⎕C def ⎕VGET ⊂'type' ''
+      cred←''
+      :Select type
+      :Case 'http'
+          scheme←⎕C def ⎕VGET ⊂'scheme' ''
+          :If scheme≡'basic'
+              :If ~0∊⍴req.UserID ⋄ cred←req.UserID req.Password ⋄ :EndIf
+          :Else
+              auth←req.GetHeader'authorization'
+              :If (scheme,' ')≡⎕C(1+≢scheme)↑auth ⋄ cred←(1+≢scheme)↓auth ⋄ :EndIf
+          :EndIf
+      :CaseList 'oauth2' 'openidconnect'
+          auth←req.GetHeader'authorization'
+          :If 'bearer '≡⎕C 7↑auth ⋄ cred←7↓auth ⋄ :EndIf
+      :Case 'apikey'
+          (in name)←def ⎕VGET('in' '')('name' '')
+          :Select ⎕C in
+          :Case 'header' ⋄ cred←req.GetHeader name
+          :Case 'query' ⋄ cred←req.QueryParams ⎕VGET ⊂(_Mangle name) ''
+          :Case 'cookie' ⋄ cred←req.GetCookie name
+          :EndSelect
+      :Else
+          cred←⍬                                ⍝ unknown scheme type (e.g. mutualTLS): the hook reads req itself
+      :EndSelect
+    ∇
+
+    ⍝ Enforce the route's security requirement.
+    ⍝ ok=1: request may proceed, req.User and req.Security are set.
+    ⍝ ok=0: req.Fail has been called and body is the error response.
+    ⍝ Entries are alternatives (any one must pass); schemes within an entry must all pass.
+    ∇ (ok body)←r _Authenticate req;reqs;entry;names;name;i;def;hook;cred;user;sec;saved;status;challenges;text
+      req.User←⍬
+      req.Security←()
+      ok←1 ⋄ body←⍬
+      →0⍴⍨0=≢reqs←_Requirements r
+      saved←req.Response.(Status StatusText)
+      :For entry :In reqs
+          sec←()
+          ok←1
+          :For name :In names←entry.⎕NL ¯2
+              i←(_Mangle¨_security[;1])⍳⊂name
+              (def hook)←_security[i;2 3]
+              cred←def _Credential req
+              :If 0∊⍴cred
+                  user←0                        ⍝ no credential: don't call the hook
+              :Else
+                  user←(scheme:1(7162⌶)name ⋄ credential:cred ⋄ scopes:entry _Scopes name)(Handlers⍎hook)req
+              :EndIf
+              :If DebugLevel 32
+                  ⎕←'STARK: auth ',(1(7162⌶)name),' → ',(1+0≡user)⊃'ok' 'fail'
+              :EndIf
+              :If ok←0≢user
+                  sec ⎕VSET ⊂name user
+              :Else
+                  :Leave
+              :EndIf
+          :EndFor
+          :If ok
+              req.Response.(Status StatusText)←saved   ⍝ undo any Fail from an alternative that didn't pass
+              req.Security←sec
+              :If 0<≢names ⋄ req.User←sec⍎⊃names ⋄ :EndIf
+              :Return
+          :EndIf
+      :EndFor
+      status←req.Response.Status
+      :If status<400                                ⍝ no hook chose an error status
+          req.Fail 401
+          challenges←∪{
+              def←⊃_security[(_Mangle¨_security[;1])⍳⊂⍵;2]
+              t s←⎕C¨def ⎕VGET('type' '')('scheme' '')
+              t s≡'http' 'basic':'Basic realm="',Info.title,'", charset="UTF-8"'
+              t≡'http':(1 ⎕C 1↑s),1↓s
+              (⊂t)∊'oauth2' 'openidconnect':'Bearer'
+              ''
+          }¨⊃,/{⍵.⎕NL ¯2}¨reqs
+          {'WWW-Authenticate'req.SetHeader ⍵}¨challenges~⊂''
+          body←(detail: 'Not authenticated')
+      :Else
+          text←(⊃⊃⎕CLASS ⎕THIS).##.Jarvis.Request.HttpStatus
+          body←(detail: (text[;1]⍳status)⊃text[;2],⊂'Error')
+      :EndIf
+    ∇
+
+    ⍝ Check at Start that every referenced scheme is registered and every hook is callable
+    ∇ _ValidateSecurity;all;entry;hook;name;def
+      all←(⊂DocsSecurity),{0≠⍵.⎕NC'security':⍵.security ⋄ ⍬}¨Spec,_routes[;4]
+      all←⊃,/,¨all
+      :For entry :In all
+          :If 9≠⎕NC'entry'
+              ⎕SIGNAL ⊂('EN' 11)('Message' 'STARK: A security requirement must be a vector of namespaces, e.g. ,(bearerAuth:⍬)')
+          :EndIf
+          :For name :In entry.⎕NL ¯2
+              :If (⊂name)∊_Mangle¨_security[;1]
+                  def←⊃_security[(_Mangle¨_security[;1])⍳⊂name;2]
+                  :If (0<≢entry _Scopes name)∧~(⊂⎕C def ⎕VGET ⊂'type' '')∊'oauth2' 'openidconnect'
+                      ⎕←'STARK: warning: scopes on "',(1(7162⌶)name),'" are only valid in OpenAPI 3.0.3 for oauth2 and openIdConnect schemes'
+                  :EndIf
+              :Else
+                  ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Security scheme "',(1(7162⌶)name),'" is used but was not registered with AddSecurity'))
+              :EndIf
+          :EndFor
+      :EndFor
+      :For hook :In _security[;3]
+          :If 0=Handlers.⎕NC⊂hook
+              ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Security hook "',hook,'" not found in Handlers'))
+          :ElseIf ~2 1≡|11 10 Handlers.⎕ATX hook
+              ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Security hook "',hook,'" must be a result-returning dyadic function'))
+          :EndIf
+      :EndFor
     ∇
 
     ⍝ OpenAPI spec generation
@@ -271,10 +431,16 @@
       result←_BuildOpenAPI
     ∇
 
-    ∇ spec←_BuildOpenAPI;paths;r;pathKey
+    ∇ spec←_BuildOpenAPI;paths;r;pathKey;schemes
       :Access Private Instance
       spec←(openapi: '3.0.3' ⋄ info: Info)
       spec ⎕NS Spec
+      :If 0<≢_security                  ⍝ add registered schemes to components.securitySchemes
+          spec.components←() ⎕NS {6::() ⋄ ⍵.components}Spec   ⍝ copy, so Spec itself isn't modified
+          schemes←() ⎕NS {6::() ⋄ ⍵.components.securitySchemes}Spec
+          schemes ⎕VSET ↓⍉↑(_Mangle¨_security[;1]) (_security[;2])
+          spec.components.securitySchemes←schemes
+      :EndIf
       paths←()
       :For r :In ↓_routes
           :If '_'=⊃3⊃r ⋄ :Continue ⋄ :EndIf
@@ -308,6 +474,7 @@
               ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: OnErrorFn "',OnErrorFn,'" must be a result-returning dyadic function'))
           :EndIf
       :EndIf
+      _ValidateSecurity
       :If ''≢ThreadMode
           j.DYALOG_JARVIS_THREAD←ThreadMode
       :EndIf

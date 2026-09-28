@@ -1,0 +1,8 @@
+∇ user←auth CheckToken req
+  ⍝ auth.credential is the token from "Authorization: Bearer <token>"
+  :If auth.credential≡'secret-token'
+      user←(name:'demo')
+  :Else
+      user←0
+  :EndIf
+∇

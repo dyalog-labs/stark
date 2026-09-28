@@ -1,0 +1,10 @@
+ r←Test_AuthHookErrorOnErrorFn dummy;router;req;result
+ ⍝ An error in a hook goes through OnErrorFn like a handler error
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ router.OnErrorFn←'HandleError'
+ router.AddSecurity 'bearerAuth' (type:'http' ⋄ scheme:'bearer') 'BrokenHook'
+ '/me' router.Get ('WhoAmI' (security:,(bearerAuth:⍬)))
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer x'))
+ result←router._Dispatch req
+ r←(500=req.Response.Status)∧('deliberate hook error'≡result.message)

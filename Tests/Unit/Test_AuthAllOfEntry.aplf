@@ -1,0 +1,10 @@
+ r←Test_AuthAllOfEntry dummy;router;req1;req2;res2
+ ⍝ Schemes within one entry must all pass
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:,(bearerAuth:⍬ ⋄ apiKey:⍬)))
+ req1←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer good'))
+ {}router._Dispatch req1
+ req2←⎕NEW #.Mocks.MockRequest ('GET' '/me' (2 2⍴'Authorization' 'Bearer good' 'X-API-Key' 'key123'))
+ res2←router._Dispatch req2
+ r←(401=req1.Response.Status)∧(0=req2.Response.Status)
+ r∧←('service'≡req2.Security.apiKey)∧('alice'≡req2.Security.bearerAuth.name)

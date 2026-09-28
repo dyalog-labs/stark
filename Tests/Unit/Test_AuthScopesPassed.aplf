@@ -1,0 +1,7 @@
+ r←Test_AuthScopesPassed dummy;router;req
+ ⍝ The hook receives the scheme name, credential and required scopes
+ router←#.Mocks.NewAuthRouter
+ '/admin' router.Get ('WhoAmI' (security:,(oauth:,⊂'admin')))
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/admin' (1 2⍴'Authorization' 'Bearer tok'))
+ {}router._Dispatch req
+ r←#.Mocks.LastAuth.(('oauth'≡scheme)∧('tok'≡credential)∧((,⊂'admin')≡scopes))

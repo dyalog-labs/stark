@@ -43,4 +43,35 @@
       result←(EN: err.EN ⋄ message: err.Message)
     ∇
 
+    ⍝ Security hooks: called as  user←auth Hook req
+
+    ∇ user←auth CheckBearer req
+      :Select auth.credential
+      :Case 'good' ⋄ user←(name: 'alice')
+      :Case 'forbidden' ⋄ req.Fail 403 ⋄ user←0
+      :Else ⋄ user←0
+      :EndSelect
+    ∇
+
+    ∇ user←auth CheckKey req
+      user←(1+auth.credential≡'key123')⊃0 'service'
+    ∇
+
+    ∇ user←auth CheckBasic req
+      user←(1+auth.credential≡'alice' 'secret')⊃0 'alice'
+    ∇
+
+    ∇ user←auth RecordAuth req
+      #.Mocks.LastAuth←auth
+      user←'recorded'
+    ∇
+
+    ∇ user←auth BrokenHook req
+      ⎕SIGNAL ⊂('EN' 11)('Message' 'deliberate hook error')
+    ∇
+
+    ∇ result←WhoAmI req
+      result←(user: req.User)
+    ∇
+
 :EndNamespace

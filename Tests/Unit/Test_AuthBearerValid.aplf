@@ -1,0 +1,8 @@
+ r←Test_AuthBearerValid dummy;router;req;result
+ ⍝ A valid bearer token reaches the handler with req.User set to the hook's result
+ router←#.Mocks.NewAuthRouter
+ router.Spec.security←,(bearerAuth:⍬)
+ '/me' router.Get 'WhoAmI'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer good'))
+ result←router._Dispatch req
+ r←(0=req.Response.Status)∧('alice'≡result.user.name)∧('alice'≡req.Security.bearerAuth.name)

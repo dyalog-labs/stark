@@ -1,0 +1,11 @@
+ r←Test_AuthStartUnregisteredScheme dummy;router
+ ⍝ Start refuses a security requirement naming a scheme that wasn't registered
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:,(nope:⍬)))
+ :Trap 11
+     router.Start 19877
+     router.Stop
+     r←0
+ :Else
+     r←∨/'"nope"'⍷⎕DMX.Message
+ :EndTrap

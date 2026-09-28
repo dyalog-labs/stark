@@ -1,0 +1,3 @@
+∇ result←Me req
+  result←req.User
+∇

@@ -20,6 +20,7 @@ router←Stark.New ()
 | `Spec`       | `()`                                 | Namespace of additional root-level OpenAPI fields (`components`, `security`, `servers`, etc.); merged into the spec alongside `info` |
 | `Debug`      | `0`                                  | Bitmask controlling debug stops and logging (see [Debug mode](#debug-mode)) |
 | `OnErrorFn`  | `''`                                 | Name of a dyadic result-returning function in `Handlers` to call on handler errors (see [Error handling](#error-handling)) |
+| `DocsSecurity` | `⍬`                                | Security requirement for `/openapi.json`; `⍬` keeps it public (see [Authentication](authentication.md#protecting-openapijson)) |
 
 ## Route registration
 
@@ -185,6 +186,8 @@ Handlers receive a Jarvis request object (`req`) with these key members:
 | `QueryParams`      | Namespace of query parameter values          |
 | `SetStatus code`   | Sets the response status code                |
 | `Fail code`        | Sets an error status code                    |
+| `User`             | The authenticated user returned by the security hook (see [Authentication](authentication.md)) |
+| `Security`         | Namespace mapping each security scheme that passed to its user |
 
 See the [Jarvis documentation](https://dyalog.github.io/Jarvis/latest/) for the full request object.
 
@@ -264,7 +267,7 @@ router.Debug←1+2    ⍝ stop on error AND stop before handler
 | `4`   | Jarvis framework debugging (forwarded to Jarvis). |
 | `8`   | Conga event logging — logs low-level TCP/IP events (forwarded to Jarvis). |
 | `16`  | Stop just before the HTTP response is sent (forwarded to Jarvis). |
-| `32`  | **Stark framework debug** — prints a trace line to the session for each matched user route: `STARK: GET /users/42 → GetUser` |
+| `32`  | **Stark framework debug** — prints a trace line to the session for each matched user route: `STARK: GET /users/42 → GetUser`, and one for each security scheme checked: `STARK: auth bearerAuth → ok` |
 | `64`  | **Stop before routing** — execution stops at the entry of `_Dispatch`, before any route matching. Useful for inspecting the raw `req` object as Stark sees it. |
 
 Bits `2`, `32`, and `64` are handled entirely by Stark. Bits `1`, `4`, `8`, and `16` are forwarded to the underlying Jarvis instance.

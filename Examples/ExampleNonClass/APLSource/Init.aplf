@@ -3,6 +3,7 @@
 
   router←##.Stark.New ()
   router.Info←(title:'Example Items API' ⋄ version:'1.0.0')
+  router.AddSecurity 'bearerAuth' (type:'http' ⋄ scheme:'bearer') 'CheckToken'
 
   routes←[
   'GET' '/' 'Root' (
@@ -52,6 +53,11 @@
   'GET' '/customer/{cust_id}/invoice/{inv_id}' 'GetInvoice'(
       summary: 'Get a customer invoice'
       tags: ('invoices'⋄)
+  )
+  'GET' '/me' 'Me'(
+      summary: 'The authenticated user'
+      tags: ('auth'⋄)
+      security: ,(bearerAuth:⍬)
   )
   ]
   router.Register routes

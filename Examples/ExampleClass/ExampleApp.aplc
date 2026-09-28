@@ -23,6 +23,7 @@
       ⍝ Stark setup
       router←##.Stark.New ()
       router.Info←(title:'Example Items API' ⋄ version:'1.0.0')
+      router.AddSecurity 'bearerAuth' (type:'http' ⋄ scheme:'bearer') 'CheckToken'
      
       ⍝ '/'router.Get('Root'RootSchema)
       ⍝ '/items'router.Get('ListItems'ListItemsSchema)
@@ -43,6 +44,7 @@
           'DELETE'   '/items/{id}'                          'DeleteItem'   DeleteItemSchema
           'GET'      '/search'                              'SearchItems'  SearchItemsSchema
           'GET'      '/customer/{cust_id}/invoice/{inv_id}' 'GetInvoice'   GetInvoiceSchema
+          'GET'      '/me'                                  'Me'           MeSchema
       ]
       router.Register routes
     ∇
@@ -202,6 +204,29 @@
     ∇ result←GetInvoice req
       :Access Public
       result←(customer:req.PathParams.cust_id ⋄ invoice:req.PathParams.inv_id)
+    ∇
+
+
+    ⍝ Authentication
+
+    ∇ user←auth CheckToken req
+      :Access Public
+      ⍝ auth.credential is the token from "Authorization: Bearer <token>"
+      :If auth.credential≡'secret-token'
+          user←(name:'demo')
+      :Else
+          user←0
+      :EndIf
+    ∇
+
+    MeSchema←(
+    summary: 'The authenticated user'
+    tags: ('auth'⋄)
+    security: ,(bearerAuth:⍬)
+    )
+    ∇ result←Me req
+      :Access Public
+      result←req.User
     ∇
 
 :EndClass

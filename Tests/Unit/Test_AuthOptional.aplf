@@ -1,0 +1,9 @@
+ r←Test_AuthOptional dummy;router;req1;req2;res1;res2
+ ⍝ An empty requirement () as an alternative makes authentication optional
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:(bearerAuth:⍬)()))
+ req1←⎕NEW #.Mocks.MockRequest ('GET' '/me')
+ res1←router._Dispatch req1
+ req2←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer good'))
+ res2←router._Dispatch req2
+ r←(0=req1.Response.Status)∧(⍬≡res1.user)∧('alice'≡res2.user.name)

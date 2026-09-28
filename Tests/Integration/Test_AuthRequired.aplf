@@ -1,0 +1,4 @@
+ r←Test_AuthRequired dummy;resp
+ ⍝ A protected route without a token gives 401 with a Bearer challenge
+ resp←#.HttpCommand.Get(BaseURL,'/me')
+ r←(401=resp.HttpStatus)∧('Bearer'≡resp.GetHeader'WWW-Authenticate')

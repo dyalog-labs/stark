@@ -11,6 +11,7 @@ Stark is a modern REST API framework for Dyalog APL. It provides a clean, Fastif
 - **Query parameters** -- Access query string values through `req.QueryParams`
 - **Automatic OpenAPI generation** -- Get a full OpenAPI 3.0.3 spec at `/openapi.json` with no extra work
 - **Route metadata** -- Any valid OpenAPI operation field passes through to the spec; attach summaries, tags, request bodies, responses, security, and more
+- **Authentication** -- Register OpenAPI security schemes with a hook function; Stark enforces each route's `security` and documents it in the spec (see [Authentication](authentication.md))
 - **Root-level spec fields** -- Use `router.Spec` to add `components`, `security`, `servers`, and other root-level OpenAPI fields
 - **Minimal boilerplate** -- Define a handler, register a route, start the server
 

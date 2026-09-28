@@ -1,0 +1,15 @@
+ r←Test_AuthStartBadHook dummy;router
+ ⍝ Start refuses a hook that is missing or not dyadic
+ r←1
+ :For hook :In 'NoSuchFn' 'ListItems'
+     router←⎕NEW #.Stark
+     router.Handlers←#.Mocks.MockHandlers
+     router.AddSecurity 'bearerAuth' (type:'http' ⋄ scheme:'bearer') hook
+     :Trap 11
+         router.Start 19877
+         router.Stop
+         r←0
+     :Else
+         r∧←∨/hook⍷⎕DMX.Message
+     :EndTrap
+ :EndFor

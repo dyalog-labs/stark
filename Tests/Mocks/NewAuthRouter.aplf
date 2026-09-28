@@ -1,0 +1,8 @@
+ router←NewAuthRouter
+ ⍝ A router with bearer, api-key (header), basic and oauth2 schemes registered
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ router.AddSecurity 'bearerAuth' (type:'http' ⋄ scheme:'bearer') 'CheckBearer'
+ router.AddSecurity 'apiKey' (type:'apiKey' ⋄ in:'header' ⋄ name:'X-API-Key') 'CheckKey'
+ router.AddSecurity 'basicAuth' (type:'http' ⋄ scheme:'basic') 'CheckBasic'
+ router.AddSecurity 'oauth' (type:'oauth2' ⋄ flows:(clientCredentials:(tokenUrl:'/token' ⋄ scopes:(admin:'Admin access')))) 'RecordAuth'

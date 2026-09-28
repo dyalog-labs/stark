@@ -1,0 +1,7 @@
+ r←Test_AuthDocsSecurity dummy;router;req;result
+ ⍝ DocsSecurity protects /openapi.json
+ router←#.Mocks.NewAuthRouter
+ router.DocsSecurity←,(bearerAuth:⍬)
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/openapi.json')
+ result←router._Dispatch req
+ r←401=req.Response.Status

@@ -121,10 +121,12 @@ Use `router.Spec` to add fields at the root of the spec document alongside `open
 ```apl
 router.Info←(title: 'My API' ⋄ version: '1.0.0')   ⍝ unchanged
 router.Spec←(
-    components: (securitySchemes: (bearerAuth: (type: 'http' ⋄ scheme: 'bearer')))
-    security: ,(bearerAuth: ⍬)
+    servers: ,(url: 'https://api.example.com' ⋄ description: 'Production')
+    components: (schemas: (Item: (type: 'object')))
 )
 ```
+
+For security, register schemes with `router.AddSecurity` instead of writing `components.securitySchemes` by hand. Stark adds them to the spec and also enforces them. See [Authentication](authentication.md).
 
 ## Using with Swagger UI
 

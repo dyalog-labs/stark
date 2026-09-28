@@ -1,0 +1,8 @@
+ r←Test_AuthRouteOptOut dummy;router;req;result
+ ⍝ security:⍬ on a route makes it public despite a global default
+ router←#.Mocks.NewAuthRouter
+ router.Spec.security←,(bearerAuth:⍬)
+ '/health' router.Get ('WhoAmI' (security:⍬))
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/health')
+ result←router._Dispatch req
+ r←(0=req.Response.Status)∧(⍬≡result.user)

@@ -1,0 +1,11 @@
+ r←Test_AuthBasic dummy;router;req1;req2;res2
+ ⍝ http basic passes (UserID Password) to the hook and challenges with Basic when missing
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:,(basicAuth:⍬)))
+ req1←⎕NEW #.Mocks.MockRequest ('GET' '/me')
+ {}router._Dispatch req1
+ req2←⎕NEW #.Mocks.MockRequest ('GET' '/me')
+ req2.(UserID Password)←'alice' 'secret'
+ res2←router._Dispatch req2
+ r←(401=req1.Response.Status)∧(∨/'Basic realm='⍷∊req1.Response.Headers)
+ r∧←(0=req2.Response.Status)∧('alice'≡res2.user)

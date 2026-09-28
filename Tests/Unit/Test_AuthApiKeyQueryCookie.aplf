@@ -1,0 +1,12 @@
+ r←Test_AuthApiKeyQueryCookie dummy;router;req1;req2
+ ⍝ apiKey schemes read the credential from the query string or a cookie
+ router←#.Mocks.NewAuthRouter
+ router.AddSecurity 'queryKey' (type:'apiKey' ⋄ in:'query' ⋄ name:'api_key') 'CheckKey'
+ router.AddSecurity 'cookieKey' (type:'apiKey' ⋄ in:'cookie' ⋄ name:'session') 'CheckKey'
+ '/q' router.Get ('WhoAmI' (security:,(queryKey:⍬)))
+ '/c' router.Get ('WhoAmI' (security:,(cookieKey:⍬)))
+ req1←⎕NEW #.Mocks.MockRequest ('GET' '/q')
+ req1.QueryParams←1 2⍴'api_key' 'key123'
+ req2←⎕NEW #.Mocks.MockRequest ('GET' '/c')
+ req2.Cookies←1 2⍴'session' 'key123'
+ r←'service' 'service'≡{(router._Dispatch ⍵).user}¨req1 req2

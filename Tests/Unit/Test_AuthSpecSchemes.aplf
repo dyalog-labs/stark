@@ -1,0 +1,10 @@
+ r←Test_AuthSpecSchemes dummy;router;spec;schemes
+ ⍝ Registered schemes appear in components.securitySchemes, alongside user components, without modifying Spec
+ router←#.Mocks.NewAuthRouter
+ router.Spec.components←(schemas:(Item:(type:'object')))
+ '/admin' router.Get ('WhoAmI' (security:,(oauth:,⊂'admin')))
+ spec←router.OpenAPI
+ schemes←spec.components.securitySchemes
+ r←('http'≡schemes.bearerAuth.type)∧('X-API-Key'≡schemes.apiKey.name)∧('object'≡spec.components.schemas.Item.type)
+ r∧←0=router.Spec.components.⎕NC'securitySchemes'
+ r∧←(,⊂'admin')≡(⊃spec.paths.⍙⍙47⍙admin.get.security).oauth

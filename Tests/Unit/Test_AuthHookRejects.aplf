@@ -1,0 +1,8 @@
+ r←Test_AuthHookRejects dummy;router;req;result
+ ⍝ A hook returning 0 gives 401
+ router←#.Mocks.NewAuthRouter
+ router.Spec.security←,(bearerAuth:⍬)
+ '/me' router.Get 'WhoAmI'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer bad'))
+ result←router._Dispatch req
+ r←(401=req.Response.Status)∧('Not authenticated'≡result.detail)

@@ -1,0 +1,7 @@
+ r←Test_AuthOpenAPIPublic dummy;router;req;result
+ ⍝ /openapi.json is public by default, even with a global security default
+ router←#.Mocks.NewAuthRouter
+ router.Spec.security←,(bearerAuth:⍬)
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/openapi.json')
+ result←router._Dispatch req
+ r←(0=req.Response.Status)∧('3.0.3'≡result.openapi)

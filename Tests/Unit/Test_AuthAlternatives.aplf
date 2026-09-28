@@ -1,0 +1,7 @@
+ r←Test_AuthAlternatives dummy;router;req;result
+ ⍝ Entries are alternatives: an api key alone satisfies (bearerAuth) OR (apiKey)
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:(bearerAuth:⍬)(apiKey:⍬)))
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'X-API-Key' 'key123'))
+ result←router._Dispatch req
+ r←(0=req.Response.Status)∧('service'≡result.user)

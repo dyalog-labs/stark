@@ -26,6 +26,7 @@ nav = [
   { "Getting Started" = "getting-started.md" },
   { "Stark Router" = "stark-router.md" },
   { "OpenAPI Generation" = "openapi.md" },
+  { "Authentication" = "authentication.md" },
   { "Jarvis Server" = "jarvis-server.md" },
   { "Examples" = "examples.md" },
 ]

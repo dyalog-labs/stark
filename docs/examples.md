@@ -29,6 +29,7 @@ The server starts on port 8080.
 | `DELETE` | `/items/{id}`                            | `DeleteItem`   | Delete an item           |
 | `GET`    | `/search?q=...`                          | `SearchItems`  | Search with query param  |
 | `GET`    | `/customer/{cust_id}/invoice/{inv_id}`   | `GetInvoice`   | Multi-parameter path     |
+| `GET`    | `/me`                                    | `Me`           | Requires a bearer token (`secret-token`) |
 | `GET`    | `/openapi.json`                          | *(auto)*       | OpenAPI spec             |
 
 ### Sample requests

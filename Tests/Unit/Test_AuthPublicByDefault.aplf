@@ -1,0 +1,7 @@
+ r←Test_AuthPublicByDefault dummy;router;req;result
+ ⍝ With schemes registered but no security anywhere, routes stay public
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get 'WhoAmI'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me')
+ result←router._Dispatch req
+ r←(0=req.Response.Status)∧(⍬≡result.user)

@@ -1,0 +1,7 @@
+ r←Test_AuthBearer dummy;h;resp;data
+ ⍝ A valid bearer token reaches the handler, which sees req.User
+ h←#.HttpCommand.New 'get' (BaseURL,'/me')
+ (h.AuthType h.Auth)←'Bearer' 'secret-token'
+ resp←h.Run
+ data←⎕JSON resp.Data
+ r←(200=resp.HttpStatus)∧('demo'≡data.name)
