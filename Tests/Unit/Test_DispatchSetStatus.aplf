@@ -1,0 +1,8 @@
+ r←Test_DispatchSetStatus dummy;router;req;result
+ router←#.Stark.New ⍬
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Post 'CreateItem'
+ req←⎕NEW #.Mocks.MockRequest ('POST' '/items')
+ req.Payload←(name: 'Test' ⋄ price: 99)
+ result←router._Dispatch req
+ r←201=req.Response.Status

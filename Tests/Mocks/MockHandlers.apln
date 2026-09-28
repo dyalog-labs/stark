@@ -10,7 +10,7 @@
     ∇
 
     ∇ result←CreateItem req
-      req.StatusCode←201
+      req.SetStatus 201
       result←req.Payload
     ∇
 
@@ -25,6 +25,10 @@
     ∇ result←SearchItems req;q
       q←req.QueryParams ⎕VGET ⊂(,'q') ''
       result←(query: q)
+    ∇
+
+    ∇ result←GetSpecialItem req
+      result←(special: 1)
     ∇
 
     ∇ result←GetInvoice req

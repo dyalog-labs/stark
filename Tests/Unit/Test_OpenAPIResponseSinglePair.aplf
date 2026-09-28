@@ -1,0 +1,6 @@
+ r←Test_OpenAPIResponseSinglePair dummy;router;op
+ router←#.Stark.New ⍬
+ router.Handlers←#.Mocks.MockHandlers
+ '/items/{id}' router.Delete ('DeleteItem' (responses: (204 ⍬)))
+ op←(4⊃router.Routes[1;])
+ r←(,⊂'⍙204')≡op.responses.⎕NL ¯9

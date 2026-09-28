@@ -1,0 +1,10 @@
+ r←Test_OpenAPIResponseShorthand dummy;router;spec;op;resp;noContent
+ router←#.Stark.New ⍬
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Post ('CreateItem' (responses: (201 (type: 'object'))(204 ⍬)))
+ spec←router.OpenAPI
+ op←spec.paths.⍙⍙47⍙items.post
+ resp←op.responses.⍙201
+ noContent←op.responses.⍙204
+ r←('Created'≡resp.description)∧('object'≡resp.content.⍙application⍙47⍙json.schema.type)
+ r∧←('No Content'≡noContent.description)∧(0=noContent.⎕NC'content')

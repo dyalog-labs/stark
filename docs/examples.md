@@ -71,8 +71,7 @@ curl http://localhost:8080/openapi.json
 The constructor sets up the router and registers all routes:
 
 ```apl
-router←⎕NEW ##.Stark
-router.Handlers←⎕THIS         ⍝ handlers are methods on this class
+router←##.Stark.New ()        ⍝ Handlers defaults to this instance
 router.Info←(title: 'Example Items API' ⋄ version: '1.0.0')
 
 routes←[
@@ -105,6 +104,23 @@ Each handler is a public method that receives the request and returns a namespac
 ∇
 ```
 
+`CreateItem` shows how to return a status other than 200:
+
+```apl
+∇ result←CreateItem req;body;item
+  :Access Public
+  body←req.Payload
+  item←⎕NS''
+  item.id←1+⌈/0,db.items.id
+  item.name←body.name
+  item.price←body.price
+  item.tags←⍬
+  db.items,←⊂item
+  req.SetStatus 201
+  result←item
+∇
+```
+
 ### Sample data
 
 The app ships with two items pre-loaded:
@@ -113,3 +129,14 @@ The app ships with two items pre-loaded:
 |----|------------|-------|------------------------|
 | 1  | Dyalog APL | 0     | `'language' 'array'`   |
 | 2  | SharpPlot  | 0     | `'graphics' 'charting'`|
+
+## ExampleNonClass -- the same API without a class
+
+`Examples/ExampleNonClass` implements the same endpoints as plain functions in `#`, one file per function under `APLSource/`. It shows that Stark does not need a class: `Init` creates the router with `Stark.New ()` from `#`, so `Handlers` is `#` and the handler functions are found there.
+
+```bash
+cd Examples/ExampleNonClass
+dyalogscript Run.apls
+```
+
+`Init` also shows the route metadata written inline in the `Register` matrix rather than in separate variables.

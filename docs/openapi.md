@@ -4,7 +4,7 @@ Stark automatically generates an [OpenAPI 3.0.3](https://spec.openapis.org/oas/v
 
 ## Accessing the spec
 
-When `router.Start` is called, Stark registers an internal route at `/openapi.json` that serves the spec as JSON.
+Every router has an internal route at `/openapi.json`, registered when the router is created, that serves the spec as JSON.
 
 ```bash
 curl http://localhost:8080/openapi.json
@@ -55,7 +55,7 @@ opts←(
 '/items' router.Post ('CreateItem' opts)
 ```
 
-Because field names must be valid APL names, use the `7162⌶` mangled form for keys containing special characters. `application/json` mangles to `⍙application⍙47⍙json`.
+Because field names must be valid APL names, use the [`7162⌶` mangled form](stark-router.md#mangled-names) for keys containing special characters. `application/json` mangles to `⍙application⍙47⍙json`.
 
 ## Conveniences
 
@@ -64,11 +64,55 @@ Stark applies four automatic transformations on top of the pass-through:
 | Convenience | Behaviour |
 |-------------|-----------|
 | `operationId` | Defaults to the handler function name if not provided |
-| Path parameters | Auto-extracted from `{param}` URL segments; always `in: 'path'`, `required: true`, `schema: {type: 'string'}` |
-| `responses` shorthand | A vector of `(statusCode schema)` pairs is converted to a mangled responses namespace |
+| Path parameters | Generated from `{param}` URL segments with `in: 'path'`, `required: true`, `schema: {type: 'string'}`. A `parameters` entry you supply with the same `name` and `in: 'path'` replaces the generated one; other entries are added after the generated ones |
+| `responses` shorthand | A vector of `(statusCode schema)` pairs is expanded into full response objects (see [below](#responses-shorthand)) |
 | Default 200 | If no `responses` are specified, a generic `200 Successful response` entry is added |
 
 **Everything else passes through untouched.** Use OpenAPI field names directly: `requestBody` (not `body`), `parameters`, `security`, `deprecated`, `externalDocs`, etc.
+
+### Responses shorthand
+
+Each `(statusCode schema)` pair becomes a response whose `description` is the standard HTTP status text and whose schema is served as `application/json`. Use `⍬` in place of a schema for a response with no body:
+
+```apl
+responses: (
+    201 (type: 'object' ⋄ properties: (id: (type: 'integer')))
+    204 ⍬
+)
+```
+
+generates:
+
+```json
+"responses": {
+  "201": {
+    "description": "Created",
+    "content": {"application/json": {"schema": {"type": "object", "properties": {"id": {"type": "integer"}}}}}
+  },
+  "204": {"description": "No Content"}
+}
+```
+
+Status codes that Jarvis does not recognise get the description `Response`.
+
+For full control — a custom description, headers, or other content types — pass `responses` as a namespace instead. It is used as-is, so write status codes in mangled form:
+
+```apl
+responses: (
+    ⍙201: (description: 'Item created' ⋄ content: (⍙application⍙47⍙json: (schema: ItemSchema)))
+)
+```
+
+## Overriding path parameters
+
+Generated path parameters are always typed as strings. To document a different type, supply the parameter yourself:
+
+```apl
+opts←(parameters: ,⊂(name: 'id' ⋄ in: 'path' ⋄ required: ⊂'true' ⋄ schema: (type: 'integer')))
+'/items/{id}' router.Get ('GetItem' opts)
+```
+
+This changes only the spec; `req.PathParams.id` is still a string.
 
 ## Root-level OpenAPI fields
 
@@ -78,15 +122,9 @@ Use `router.Spec` to add fields at the root of the spec document alongside `open
 router.Info←(title: 'My API' ⋄ version: '1.0.0')   ⍝ unchanged
 router.Spec←(
     components: (securitySchemes: (bearerAuth: (type: 'http' ⋄ scheme: 'bearer')))
-    security: ,⊂(bearerAuth: ⍬)
+    security: ,(bearerAuth: ⍬)
 )
 ```
-
-## Default behaviour
-
-- Routes with no metadata still appear in the spec with a default `200 Successful response`.
-- Path parameters are always generated with `in: 'path'`, `required: true`, and `schema: {type: 'string'}`. Supply a `parameters` entry in the route opts to override or augment.
-- If no `responses` metadata is provided, a generic 200 response entry is added.
 
 ## Using with Swagger UI
 

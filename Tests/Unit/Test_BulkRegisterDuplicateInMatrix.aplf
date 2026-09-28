@@ -1,0 +1,14 @@
+ r←Test_BulkRegisterDuplicateInMatrix dummy;router;routes
+ router←#.Stark.New ⍬
+ router.Handlers←#.Mocks.MockHandlers
+ routes←[
+    'GET' '/search'     'SearchItems'
+    'GET' '/items/{id}' 'GetItem'
+    'GET' '/items/{x}'  'GetItem'
+ ]
+ :Trap 11
+     router.Register routes
+     r←0
+ :Else
+     r←0=≢router.Routes   ⍝ rejected as a whole: nothing registered
+ :EndTrap

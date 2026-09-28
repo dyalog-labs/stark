@@ -6,7 +6,7 @@ Stark is a modern REST API framework for Dyalog APL. It provides a clean, Fastif
 
 ## Features
 
-- **HTTP verb routing** -- Register handlers with `Get`, `Post`, `Put`, `Delete`, and `Patch`
+- **HTTP verb routing** -- Register handlers with `Get`, `Post`, `Put`, `Delete`, and `Patch`, or many at once with `Register`
 - **Path parameters** -- Use `{param}` syntax for dynamic URL segments like `/users/{id}`
 - **Query parameters** -- Access query string values through `req.QueryParams`
 - **Automatic OpenAPI generation** -- Get a full OpenAPI 3.0.3 spec at `/openapi.json` with no extra work
@@ -17,13 +17,12 @@ Stark is a modern REST API framework for Dyalog APL. It provides a clean, Fastif
 ## Quick look
 
 ```apl
-router←⎕NEW Stark
-router.Handlers←⎕THIS
+router←Stark.New ()
 router.Info←(title: 'My API' ⋄ version: '1.0.0')
 
 '/items'      router.Get  'ListItems'
 '/items/{id}' router.Get  'GetItem'
-'/items'      router.Post ('CreateItem' createOpts)
+'/items'      router.Post ('CreateItem' (summary: 'Create an item'))
 
 router.Start 8080
 ```
@@ -32,7 +31,9 @@ router.Start 8080
 
 - Dyalog APL 20.0 or later
 - Conga networking library (ships with Dyalog)
-- Jarvis (A copy is also provided in APLSource)
+- Jarvis 1.22 or later (installed automatically as a Tatin dependency; a copy is also provided in `APLSource`)
+
+See [Getting started](getting-started.md#1-install-stark) for installation.
 
 ## Project structure
 
@@ -47,5 +48,10 @@ Examples/
   ExampleNonClass/
     APLSource/             ← Sample CRUD API (function-based)
     Run.apls               ← Script to launch the example
+Tests/
+  Unit/                    ← Unit tests (run against mock requests)
+  Integration/             ← Integration tests (run against ExampleApp)
+  RunTests.apls            ← Script to run all tests
 docs/                      ← This documentation
+apl-package.json           ← Tatin package definition
 ```

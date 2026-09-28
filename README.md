@@ -40,7 +40,7 @@ routes←[
     'GET' '/items'      'ListItems'
     'GET' '/items/{id}' 'GetItem'
 ]
-routes←router.Register routes
+router.Register routes
 
 router.Start 8080
 ```
@@ -80,21 +80,29 @@ opts←(
 routes←[
     'POST' '/items' 'CreateItem' opts
 ]
-routes←router.Register routes
+router.Register routes
 ```
 
-Because APL names cannot contain `/`, content-type keys like `application/json` use the mangled form `⍙application⍙47⍙json`. The `responses` field accepts a shorthand vector of `(statusCode schema)` pairs. See the [OpenAPI docs](docs/openapi.md) for the full reference.
+Because APL names cannot contain `/`, content-type keys like `application/json` use the mangled form `⍙application⍙47⍙json`. The `responses` field accepts a shorthand vector of `(statusCode schema)` pairs, which Stark expands into full OpenAPI response objects. See the [OpenAPI docs](https://dyalog-labs.github.io/stark/openapi/) for the full reference.
 
 This opens the door to Swagger UI, auto-generated client libraries (including APL clients), Postman collections, LLM tool integration, and any other tooling that consumes OpenAPI specs.
 
 ## Requirements
 
 - Dyalog APL 20.0+
-- Jarvis 1.22+ (Included in the Tatin package)
+- Jarvis 1.22+ (installed automatically as a Tatin dependency)
+
+## Installation
+
+Stark is published on [Tatin](https://tatin.dev) as `dyalog_labs-Stark`:
+
+```apl
+]Tatin.LoadPackages [tatin]dyalog_labs-Stark #
+```
 
 ## Documentation
 
-See the [docs](docs/) folder for full reference documentation.
+Full documentation is at [dyalog-labs.github.io/stark](https://dyalog-labs.github.io/stark/). The source is in the [docs](docs/) folder.
 
 ## Status
 

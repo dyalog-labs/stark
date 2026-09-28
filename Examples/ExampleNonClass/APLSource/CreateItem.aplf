@@ -7,6 +7,6 @@
     tags: ⍬
   )
   db.items,←item
-  req.StatusCode←201
+  req.SetStatus 201
   result←item
 ∇

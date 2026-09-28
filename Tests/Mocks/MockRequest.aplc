@@ -7,7 +7,6 @@
     :Field Public Instance Payload←''
     :Field Public Instance Body←''
     :Field Public Instance PathParams
-    :Field Public Instance StatusCode←200
     :Field Public Instance Response
 
     ∇ make args
@@ -24,6 +23,13 @@
     ∇ {r}←{message}Fail status
       :Access Public
       :If r←0≠1↑status
+          Response.Status←status
+      :EndIf
+    ∇
+
+    ∇ {status}←{statusText}SetStatus status
+      :Access Public
+      :If status≠0
           Response.Status←status
       :EndIf
     ∇

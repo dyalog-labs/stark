@@ -1,0 +1,7 @@
+ r←Test_OpenAPIPathParamOverride dummy;router;spec;op;params
+ router←#.Stark.New ⍬
+ router.Handlers←#.Mocks.MockHandlers
+ params←(name:'id' ⋄ in:'path' ⋄ required:⊂'true' ⋄ schema:(type:'integer'))(name:'full' ⋄ in:'query' ⋄ schema:(type:'boolean'))
+ '/items/{id}' router.Get ('GetItem' (parameters: params))
+ op←(4⊃router.Routes[1;])
+ r←(2=≢op.parameters)∧('integer'≡(⊃op.parameters).schema.type)

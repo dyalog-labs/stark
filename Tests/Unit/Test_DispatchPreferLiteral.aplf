@@ -1,0 +1,10 @@
+ r←Test_DispatchPreferLiteral dummy;router;req1;req2;res1;res2
+ router←#.Stark.New ⍬
+ router.Handlers←#.Mocks.MockHandlers
+ '/items/{id}' router.Get 'GetItem'
+ '/items/special' router.Get 'GetSpecialItem'
+ req1←⎕NEW #.Mocks.MockRequest ('GET' '/items/special')
+ req2←⎕NEW #.Mocks.MockRequest ('GET' '/items/42')
+ res1←router._Dispatch req1
+ res2←router._Dispatch req2
+ r←(1≡res1.special)∧('42'≡res2.id)

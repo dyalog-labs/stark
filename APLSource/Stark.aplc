@@ -102,36 +102,41 @@
       _routes⍪←r
     ∇
 
-    ∇ r←Register routes
+    ∇ {r}←Register routes;old;row;ns
       :Access Public
-      ⍝ Matrix mode:   N×4 matrix of (method path handler spec)
+      ⍝ Matrix mode:    N×3 or N×4 matrix of (method path handler [spec])
       ⍝ Namespace mode: vector of namespaces, each with .method .path .handler and optionally .spec
-      :If 2=⍴⍴routes
-        :If _routes[;2]{0≢≢⊃∩/{_NormalizePath¨⍵}¨⍺ ⍵}routes[;2]
-            ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Duplicate routes detected'))
-        :EndIf
-        routes[;2]←,¨routes[;2]
-        routes←{r←4↑⍵,⊂() ⋄ r[4]←_BuildOp r ⋄ r}¨↓routes
-        _routes⍪←↑routes
-      :Else
-        :For ns :In ,routes
-          :If 9=ns.⎕NC'spec'
-              _Register ns.method ns.path (ns.handler ns.spec)
+      ⍝ Every route goes through _Register's duplicate check; if any route is rejected, none are registered
+      old←_routes
+      :Trap 0
+          :If 2=⍴⍴routes
+              :For row :In ↓routes
+                  _Register(1⊃row)(2⊃row)((3⊃row)(4⊃row,⊂()))
+              :EndFor
           :Else
-              _Register ns.method ns.path ns.handler
+              :For ns :In ,routes
+                  :If 9=ns.⎕NC'spec'
+                      _Register ns.method ns.path(ns.handler ns.spec)
+                  :Else
+                      _Register ns.method ns.path ns.handler
+                  :EndIf
+              :EndFor
           :EndIf
-        :EndFor
-      :EndIf
-      r←_routes
+      :Else
+          _routes←old
+          ⎕SIGNAL⊂⎕DMX.(('EN'EN)('Message'Message))
+      :EndTrap
+      r←Routes
     ∇
 
     ⍝ Cover function for 7162⌶ (mangle string into valid APL name)
     _Mangle←{0(7162⌶)⍵}
 
-    ⍝ Replace {param} segments with a placeholder so structurally identical paths match
-    _NormalizePath←{⍵/⍨~+\∊+/¯1 0⌽¨1 ¯1×↓'{}'∘.=⍵}
+    ⍝ Replace {param} segments with a placeholder and drop empty segments, so paths that
+    ⍝ pathMatch treats as identical (/items/{id}, /items/{item_id}, /items/{id}/) compare equal
+    _NormalizePath←{∊'/',¨{'{'=⊃⍵:'{}' ⋄ ⍵}¨'/'(≠⊆⊢),⍵}
 
-    ∇ op←_BuildOp r;method;path;handler;opts;segs;varMask;param;pNS;pathParams
+    ∇ op←_BuildOp r;method;path;handler;opts;segs;varMask;param;pNS;pathParams;names;user;over;pairs
       :Access Private Instance
       (method path handler opts)←r
 
@@ -141,7 +146,8 @@
       segs←'/'(≠⊆⊢)path
       varMask←'{'=⊃¨segs
       pathParams←⍬
-      :For param :In {1↓¯1↓⍵}¨varMask/segs
+      names←{1↓¯1↓⍵}¨varMask/segs
+      :For param :In names
           pathParams,←⊂(name: param ⋄ in: 'path' ⋄ required: (⊂'true') ⋄ schema: (type: 'string'))
       :EndFor
 
@@ -149,12 +155,18 @@
           op ⎕NS opts                           ⍝ merge — user's OpenAPI fields pass through
                                                 ⍝ note: if opts had parameters, ⎕NS just copied it; we overwrite below
           op.parameters←pathParams              ⍝ path params first, then append user-supplied extras
-          :If 2≤opts.⎕NC'parameters' ⋄ op.parameters,←opts.parameters ⋄ :EndIf
+          :If 2≤opts.⎕NC'parameters'
+              user←,opts.parameters
+              over←{6::'' ⋄ 'path'≡⍵.in:⍵.name ⋄ ''}¨user
+              op.parameters←((~names∊over)/pathParams),user   ⍝ a user path param replaces the generated one of the same name
+          :EndIf
 
           :If 2≤opts.⎕NC'responses'
               :If ~(9.1=42∘⎕ATX)'opts.responses'
+                  pairs←,⊆opts.responses        ⍝ shorthand: vector of (statusCode schema) pairs
+                  :If 0=≡⊃pairs ⋄ pairs←,⊂pairs ⋄ :EndIf  ⍝ a single pair such as (204 ⍬)
                   op.responses←()
-                  op.responses ⎕VSET ↓⍉↑(_Mangle⍕¨⊃¨,⊆opts.responses) (2⊃¨,⊆opts.responses)
+                  op.responses ⎕VSET ↓⍉↑(_Mangle∘⍕¨⊃¨pairs)((⊃¨pairs)_Response¨(2⊃¨pairs))
               :EndIf
           :EndIf
       :Else
@@ -165,6 +177,16 @@
 
       :If 0=≢op.responses.⎕NL ¯2 ¯9
           op.responses ⎕VSET ⊂(_Mangle'200') (description: 'Successful response')
+      :EndIf
+    ∇
+
+    ⍝ Expand one responses-shorthand pair into an OpenAPI Response Object:
+    ⍝ description from the HTTP status text, schema (if a namespace) under application/json
+    ∇ resp←code _Response schema;status
+      status←(⊃⊃⎕CLASS ⎕THIS).##.Jarvis.Request.HttpStatus
+      resp←(description:(status[;1]⍳⊂code)⊃status[;2],⊂'Response')
+      :If 9=⎕NC'schema'
+          resp.content←(⍙application⍙47⍙json:(schema:schema))
       :EndIf
     ∇
 
@@ -190,7 +212,7 @@
     }
 
     ⍝ Route an incoming Jarvis request to the matching handler
-    ∇ result←_Dispatch req;routes;r;matched;pp;m;err
+    ∇ result←_Dispatch req;routes;r;matched;pp;m;err;i
       :Access Public Instance
       stopIf DebugLevel 64                          ⍝ stop before routing
       routes←(_routes[;1] ∊⍥⎕C ⊂req.Method)⌿_routes
@@ -203,15 +225,18 @@
       :EndIf
       m pp←{(⊃⍵) (⍵⊃⍛/2⊃⍵)}↓⍉↑routes[;2] pathMatch¨⊂req.Endpoint
       r←m⌿routes
-      :If 1≠≢pp
+      :If 0=≢pp
           req.Fail 404
           result←(
             detail: 'Not Found'
           )
           :Return
       :EndIf
-      r←r[1;]
-      req.PathParams←⊃pp ⍝ Shouldn't have multiple matches.
+      ⍝ Several patterns can match (/items/special and /items/{id}); prefer literal
+      ⍝ segments over {param} ones, comparing left to right
+      i←⊃⍋↑{'{'=⊃¨'/'(≠⊆⊢)⍵}¨r[;2]
+      r←r[i;]
+      req.PathParams←i⊃pp
       req.QueryParams←() ⎕VSET ↓{⍵≡0 2⍴⍬:0 2⍴⍬⋄n←⍵⋄n[;1]←0(7162⌶)n[;1]⋄n}req.QueryParams
       :If '_'=⊃3⊃r
           result←(⍎3⊃r)req          ⍝ internal handler (on Stark)
@@ -270,12 +295,7 @@
       code.Put←{inst._Dispatch ⍵}
       code.Delete←{inst._Dispatch ⍵}
       code.Patch←{inst._Dispatch ⍵}
-      :If _jarvis≡⍬
-          j←⎕NEW (⊃⊃⎕CLASS ⎕THIS).##.Jarvis
-          _jarvis←j
-      :Else
-          j←_jarvis
-      :EndIf
+      j←_jarvis
       j.Port←port
       j.Paradigm←'REST'
       j.CodeLocation←code

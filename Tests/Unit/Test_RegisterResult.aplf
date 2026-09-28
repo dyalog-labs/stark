@@ -1,0 +1,5 @@
+ r←Test_RegisterResult dummy;router;result
+ router←#.Stark.New ⍬
+ router.Handlers←#.Mocks.MockHandlers
+ result←router.Register 1 3⍴'GET' '/items' 'ListItems'
+ r←result≡router.Routes

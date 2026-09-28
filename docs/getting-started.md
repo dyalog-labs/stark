@@ -20,22 +20,36 @@ curl http://localhost:8080/openapi.json
 
 ## Creating your own application
 
-### 1. Get Stark and Jarvis
+### 1. Install Stark
 
-Download or clone both Stark and Jarvis into your project.
+Stark is published on the [Tatin](https://tatin.dev) registry as `dyalog_labs-Stark`. Jarvis is a dependency and is installed with it.
 
-### 2. Import into the workspace
-
-Load them however suits your project, for example:
+To load Stark into the workspace:
 
 ```apl
-]link.import # ./Path/To/Stark.aplc
-]link.import # ./Path/To/Jarvis.aplc
+]Tatin.LoadPackages [tatin]dyalog_labs-Stark #
 ```
 
-### 3. Create a handler namespace
+To install it into a project and load it from there:
 
-Handler functions receive a request object and return a result namespace.
+```apl
+]Tatin.InstallPackages [tatin]dyalog_labs-Stark ./packages
+]Tatin.LoadDependencies ./packages #
+```
+
+Either way, `#.Stark` refers to the Stark class.
+
+??? note "Without Tatin"
+    Copy `Stark.aplc` and `Jarvis.aplc` from this repository's `APLSource` folder and import them **into the same namespace**. Stark looks for Jarvis alongside itself, so the two must be siblings:
+
+    ```apl
+    ]link.import # ./APLSource/Stark.aplc
+    ]link.import # ./APLSource/Jarvis.aplc
+    ```
+
+### 2. Write a handler
+
+A handler takes the request as its right argument and returns the response body, usually a namespace, which Jarvis serializes to JSON.
 
 ```apl
 ∇ result←Hello req
@@ -43,21 +57,26 @@ Handler functions receive a request object and return a result namespace.
 ∇
 ```
 
-### 4. Create and configure the router
+### 3. Create and configure the router
 
 ```apl
-router←⎕NEW Stark
-router.Handlers←⎕THIS
+router←Stark.New ()
 router.Info←(title: 'My API' ⋄ version: '0.1.0')
 ```
 
-### 5. Register routes
+Stark looks for handler functions in `router.Handlers`, which defaults to the namespace that called `Stark.New`. If your handlers live elsewhere, set it explicitly:
 
 ```apl
-'/'     router.Get 'Hello'
+router.Handlers←#.MyHandlers
 ```
 
-### 6. Start the server
+### 4. Register routes
+
+```apl
+'/' router.Get 'Hello'
+```
+
+### 5. Start the server
 
 ```apl
 router.Start 8080
@@ -65,7 +84,7 @@ router.Start 8080
 
 Your API is now live at `http://localhost:8080/`. An OpenAPI spec is automatically available at `/openapi.json`.
 
-### 7. Stop the server
+### 6. Stop the server
 
 ```apl
 router.Stop
@@ -82,8 +101,7 @@ For larger applications, define a class that owns the router. This keeps handler
     ∇ Make
       :Access Public
       :Implements Constructor
-      router←⎕NEW ##.Stark
-      router.Handlers←⎕THIS
+      router←##.Stark.New ()    ⍝ Handlers defaults to this instance
       '/ping' router.Get 'Ping'
     ∇
 
@@ -104,19 +122,11 @@ For larger applications, define a class that owns the router. This keeps handler
 :EndClass
 ```
 
-## ThreadMode
+!!! note
+    Handler methods must be `:Access Public`. Stark calls them from outside the class, so private methods are not visible to it.
 
-Control how Jarvis handles requests by setting `ThreadMode` before calling `Start`:
+## Next steps
 
-| Value     | Behaviour                                |
-|-----------|------------------------------------------|
-| `''`      | Jarvis default                           |
-| `0`       | Run in thread 0 (main thread)            |
-| `1`       | Run each request in a new thread         |
-| `'DEBUG'` | Debug mode                               |
-| `'AUTO'`  | Automatic thread management              |
-
-```apl
-router.ThreadMode←0
-router.Start 8080
-```
+- Choose how the server runs relative to your session with [`ThreadMode`](stark-router.md#thread-mode).
+- Register many routes at once with [`Register`](stark-router.md#bulk-registration).
+- Describe your routes for the [OpenAPI spec](openapi.md).

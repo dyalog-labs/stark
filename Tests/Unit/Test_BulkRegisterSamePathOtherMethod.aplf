@@ -1,0 +1,6 @@
+ r←Test_BulkRegisterSamePathOtherMethod dummy;router
+ router←#.Stark.New ⍬
+ router.Handlers←#.Mocks.MockHandlers
+ '/items' router.Get 'ListItems'
+ router.Register 1 3⍴'POST' '/items' 'CreateItem'
+ r←2=≢router.Routes

@@ -1,6 +1,6 @@
 # Third-Party Licenses
 
-## dyalog-Jarvis-1.22.4
+## dyalog-Jarvis-1.22.6
 
 ```
 MIT License
