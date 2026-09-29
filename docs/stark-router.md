@@ -20,6 +20,7 @@ router←Stark.New ()
 | `Spec`       | `()`                                 | Namespace of additional root-level OpenAPI fields (`components`, `security`, `servers`, etc.); merged into the spec alongside `info` |
 | `Debug`      | `0`                                  | Bitmask controlling debug stops and logging (see [Debug mode](#debug-mode)) |
 | `OnErrorFn`  | `''`                                 | Name of a dyadic result-returning function in `Handlers` to call on handler errors (see [Error handling](#error-handling)) |
+| `OnFailFn`   | `''`                                 | Name of a dyadic result-returning function in `Handlers` that builds the body of Stark's own 401/403/404/405 responses (see [Failure responses](#failure-responses)) |
 | `DocsSecurity` | `⍬`                                | Security requirement for `/openapi.json`; `⍬` keeps it public (see [Authentication](authentication.md#protecting-openapijson)) |
 
 ## Route registration
@@ -155,7 +156,10 @@ Parameter names that are not valid APL names are [mangled with `7162⌶`](#mangl
 - Literal path segments are matched case-sensitively; the HTTP method is matched case-insensitively.
 - Empty segments are ignored, so `/items/`, `//items` and `/items` are the same path.
 - When a literal segment and a `{param}` segment could both match, the literal wins. With both `/items/special` and `/items/{id}` registered, `GET /items/special` goes to the first and `GET /items/42` to the second.
-- A request that matches no route returns `404` with the body `{"detail":"Not Found"}`. This includes a known path requested with an unregistered method (there is no `405`).
+- A request whose path matches no route returns `404` with the body `{"detail":"Not Found"}`.
+- A request whose path matches a route, but not for its method, returns `405` with the body `{"detail":"Method Not Allowed"}` and an `Allow` header listing the methods registered for that path, e.g. `Allow: GET, PUT`.
+
+To change these bodies, see [Failure responses](#failure-responses).
 
 ## Query parameters
 
@@ -335,6 +339,44 @@ The function must be result-returning and dyadic (or ambivalent). Stark validate
 
 !!! note
     `OnErrorFn` is bypassed when `Debug←1` is set, because `Debug←1` disables the `:Trap` block entirely. This is intentional: debug mode lets errors propagate to the APL session for inspection.
+
+## Failure responses
+
+Some failure responses are built by Stark itself rather than by your handlers. Set `OnFailFn` to the name of a function in `Handlers` to choose their bodies, for example to use your API's own error format:
+
+```apl
+router.OnFailFn←'FailBody'
+
+∇ body←fail FailBody req
+  :Select fail.reason
+  :Case 'not_found'     ⋄ body←(error:'not_found' ⋄ path:req.Endpoint)
+  :Case 'no_credential' ⋄ body←(error:'unauthenticated' ⋄ detail:'Send a bearer token')
+  :Else                 ⋄ body←fail.body
+  :EndSelect
+∇
+```
+
+`fail` is a namespace with:
+
+| Member    | Description |
+|-----------|-------------|
+| `status`  | The response status, already set on `req` |
+| `reason`  | Why Stark is failing the request (see below) |
+| `body`    | The body Stark would send without `OnFailFn` |
+| `schemes` | Authentication failures only: the names of the security schemes the route accepts |
+
+| `reason`             | status | When |
+|----------------------|--------|------|
+| `not_found`          | 404    | No route matches the path |
+| `method_not_allowed` | 405    | The path matches a route, but not for this method; the `Allow` header is already set |
+| `no_credential`      | 401    | The route needs authentication and the request carries no credential for any scheme it accepts |
+| `rejected`           | 401, or the status a hook set with `req.Fail` | A security hook returned `0` |
+
+The function's result becomes the response body. It can add headers with `req.SetHeader`. Bodies a security hook chose with [`auth.Reject`](authentication.md#rejecting-with-a-reason) don't go through `OnFailFn`.
+
+An error inside `OnFailFn` is handled like an error in a handler: it goes to `OnErrorFn` if set, and is re-signalled otherwise. Like `OnErrorFn`, the function must be result-returning and dyadic (or ambivalent); Stark checks this at `Start` and signals EN 11 otherwise. In a class, it must be `:Access Public`.
+
+`OnFailFn` can't change failures Jarvis handles before Stark sees the request, such as a `400` for a request body that can't be parsed.
 
 ## Inspection
 

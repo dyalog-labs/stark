@@ -1,0 +1,4 @@
+ r←Test_MethodNotAllowed dummy;resp
+ ⍝ DELETE /items isn't registered (GET and POST are), so the response is 405 with Allow
+ resp←#.HttpCommand.Do 'DELETE' (BaseURL,'/items')
+ r←(405=resp.HttpStatus)∧('GET, POST'≡resp.GetHeader'Allow')∧('Method Not Allowed'≡(⎕JSON resp.Data).detail)

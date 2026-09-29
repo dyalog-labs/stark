@@ -1,0 +1,15 @@
+ r←Test_FailStartValidation dummy;router;fn
+ ⍝ Start refuses an OnFailFn that is missing or not dyadic
+ r←1
+ :For fn :In 'NoSuchFn' 'ListItems'
+     router←⎕NEW #.Stark
+     router.Handlers←#.Mocks.MockHandlers
+     router.OnFailFn←fn
+     :Trap 11
+         router.Start 19877
+         router.Stop
+         r←0
+     :Else
+         r∧←∨/('OnFailFn "',fn,'"')⍷⎕DMX.Message
+     :EndTrap
+ :EndFor

@@ -1,0 +1,11 @@
+ r←Test_FailRejected dummy;router;req1;req2;res1;res2
+ ⍝ A hook returning a plain 0 (with or without req.Fail) reaches OnFailFn with reason rejected
+ router←#.Mocks.NewAuthRouter
+ router.OnFailFn←'FailBody'
+ '/me' router.Get ('WhoAmI' (security:,(bearerAuth:⍬)))
+ req1←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer bad'))
+ res1←router._Dispatch req1
+ req2←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer forbidden'))
+ res2←router._Dispatch req2
+ r←(401=req1.Response.Status)∧('rejected'≡res1.reason)
+ r∧←(403=req2.Response.Status)∧('rejected'≡res2.reason)∧('Forbidden'≡res2.inner.detail)

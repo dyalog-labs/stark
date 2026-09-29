@@ -1,7 +1,10 @@
  r←Test_DispatchMethodMismatch dummy;router;req;result
+ ⍝ A known path with an unregistered method gives 405, with Allow listing the registered methods
  router←⎕NEW #.Stark
  router.Handlers←#.Mocks.MockHandlers
  '/items' router.Get 'ListItems'
+ '/items' router.Put 'UpdateItem'
  req←⎕NEW #.Mocks.MockRequest ('POST' '/items')
  result←router._Dispatch req
- r←404=req.Response.Status
+ r←(405=req.Response.Status)∧('Method Not Allowed'≡result.detail)
+ r∧←(⊂'Allow' 'GET, PUT')∊↓req.Response.Headers

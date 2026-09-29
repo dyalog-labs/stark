@@ -1,0 +1,9 @@
+ r←Test_FailRejectBypasses dummy;router;req;result
+ ⍝ A body chosen with auth.Reject is sent as-is; OnFailFn isn't called
+ router←#.Mocks.NewAuthRouter
+ router.OnFailFn←'FailBody'
+ '/me' router.Get ('WhoAmI' (security:,(strictAuth:⍬)))
+ #.Mocks.⎕EX'LastFail'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer expired'))
+ result←router._Dispatch req
+ r←(401=req.Response.Status)∧('Token expired'≡result.detail)∧(0=#.Mocks.⎕NC'LastFail')

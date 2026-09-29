@@ -83,6 +83,16 @@
       ⎕SIGNAL ⊂('EN' 11)('Message' 'deliberate hook error')
     ∇
 
+    ∇ body←fail FailBody req
+      ⍝ OnFailFn: records fail, and wraps Stark's default body
+      #.Mocks.LastFail←fail
+      body←(reason: fail.reason ⋄ inner: fail.body)
+    ∇
+
+    ∇ body←fail BrokenFailFn req
+      ⎕SIGNAL ⊂('EN' 11)('Message' 'deliberate OnFailFn error')
+    ∇
+
     ∇ result←WhoAmI req
       result←(user: req.User)
     ∇

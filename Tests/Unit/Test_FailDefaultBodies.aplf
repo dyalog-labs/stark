@@ -1,0 +1,9 @@
+ r←Test_FailDefaultBodies dummy;router;req1;req2;res1;res2
+ ⍝ Without OnFailFn, Stark's own failure bodies are the defaults
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:,(bearerAuth:⍬)))
+ req1←⎕NEW #.Mocks.MockRequest ('GET' '/nope')
+ res1←router._Dispatch req1
+ req2←⎕NEW #.Mocks.MockRequest ('GET' '/me')
+ res2←router._Dispatch req2
+ r←('Not Found'≡res1.detail)∧('Not authenticated'≡res2.detail)

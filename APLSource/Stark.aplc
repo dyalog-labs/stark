@@ -28,6 +28,7 @@
     :Field Public  Spec←()       ⍝ additional root-level OpenAPI fields (components, security, servers, etc.)
     :Field Public  Debug←0       ⍝ 0=all errors trapped, 1=stop on error in dispatch, 2=stop before user handler, 4=Jarvis framework debug, 8=Conga event logging, 16=stop before response, 32=Stark framework debug, 64=stop before routing
     :Field Public  OnErrorFn←''  ⍝ if set, called as err OnErrorFn req after Fail 500 instead of resignalling; err is a ⎕DMX clone
+    :Field Public  OnFailFn←''   ⍝ if set, called as fail OnFailFn req to build the body of Stark's own 401/403/404/405 responses
     :Field Public  DocsSecurity←⍬ ⍝ security requirement for /openapi.json; ⍬ = public
     :Field Private _routes       ⍝ vector of route descriptor namespaces
     :Field Private _jarvis       ⍝ underlying Jarvis instance
@@ -215,26 +216,24 @@
     }
 
     ⍝ Route an incoming Jarvis request to the matching handler
-    ∇ result←_Dispatch req;routes;r;matched;pp;m;i;ok
+    ∇ result←_Dispatch req;r;pp;m;i;ok;allow
       :Access Public Instance
       stopIf DebugLevel 64                          ⍝ stop before routing
-      routes←(_routes[;1] ∊⍥⎕C ⊂req.Method)⌿_routes
-      :If 0=≢routes
+      m pp←↓⍉↑_routes[;2] pathMatch¨⊂req.Endpoint
+      :If ~∨/m                                      ⍝ no route has this path
           req.Fail 404
-          result←(
-            detail: 'Not Found'
-          )
+          result←(status: 404 ⋄ reason: 'not_found' ⋄ body: (detail: 'Not Found'))_FailBody req
           :Return
       :EndIf
-      m pp←{(⊃⍵) (⍵⊃⍛/2⊃⍵)}↓⍉↑routes[;2] pathMatch¨⊂req.Endpoint
-      r←m⌿routes
-      :If 0=≢pp
-          req.Fail 404
-          result←(
-            detail: 'Not Found'
-          )
+      r←m⌿_routes ⋄ pp←m/pp
+      :If ~∨/i←r[;1]∊⍥⎕C⊂req.Method                 ⍝ the path exists, but not for this method
+          req.Fail 405
+          allow←∪1 ⎕C r[;1]
+          'Allow'req.SetHeader ¯2↓∊allow,¨⊂', '
+          result←(status: 405 ⋄ reason: 'method_not_allowed' ⋄ body: (detail: 'Method Not Allowed'))_FailBody req
           :Return
       :EndIf
+      r←i⌿r ⋄ pp←i/pp
       ⍝ Several patterns can match (/items/special and /items/{id}); prefer literal
       ⍝ segments over {param} ones, comparing left to right
       i←⊃⍋↑{'{'=⊃¨'/'(≠⊆⊢)⍵}¨r[;2]
@@ -339,13 +338,14 @@
     ⍝ ok=0: req.Fail has been called and body is the error response.
     ⍝ Entries are alternatives (any one must pass); schemes within an entry must all pass.
     ⍝ A hook rejects with 0, or with  [status] auth.Reject body  to choose the status and body.
-    ∇ (ok body)←r _Authenticate req;reqs;entry;names;name;i;def;hook;cred;user;sec;saved;status;challenges;challenge;text;auth;rejection
+    ∇ (ok body)←r _Authenticate req;reqs;entry;names;name;i;def;hook;cred;user;sec;saved;status;challenges;challenge;text;auth;rejection;called
       req.User←⍬
       req.Security←()
       ok←1 ⋄ body←⍬
       →0⍴⍨0=≢reqs←_Requirements r
       saved←req.Response.(Status StatusText Headers)
       rejection←⍬
+      called←0                                      ⍝ was any hook called?
       :For entry :In reqs
           sec←()
           ok←1
@@ -358,6 +358,7 @@
               :Else
                   auth←(scheme:1(7162⌶)name ⋄ credential:cred ⋄ scopes:entry _Scopes name)
                   auth.Reject←_Reject
+                  called←1
                   user←auth(Handlers⍎hook)req
                   :If (0≡user)∧0≠auth.⎕NC'rejection' ⋄ rejection←auth.rejection ⋄ :EndIf
               :EndIf
@@ -401,6 +402,23 @@
               'WWW-Authenticate'req.SetHeader challenge
           :EndFor
       :EndIf
+      :If 0=≢rejection                              ⍝ auth.Reject bodies were chosen by the hook; don't pass them to OnFailFn
+          body←(status: status ⋄ reason: (1+called)⊃'no_credential' 'rejected' ⋄ body: body ⋄ schemes: ∪1(7162⌶)¨⊃,/{⍵.⎕NL ¯2}¨reqs)_FailBody req
+      :EndIf
+    ∇
+
+    ⍝ Body for a failure response Stark decided on itself: fail.body, or whatever OnFailFn returns.
+    ⍝ fail has .status .reason .body and, for authentication failures, .schemes
+    ∇ body←fail _FailBody req
+      :If 0∊⍴OnFailFn
+          body←fail.body
+      :Else
+          :Trap 0 DebugLevel 1             ⍝ disable trap if bit 1 set (stop on error)
+              body←fail(Handlers⍎OnFailFn)req
+          :Else
+              body←_HandleError req
+          :EndTrap
+      :EndIf
     ∇
 
     ⍝ auth.Reject for hooks:  user←[status] auth.Reject body  records the rejection in auth and returns 0
@@ -434,12 +452,17 @@
           :EndFor
       :EndFor
       :For hook :In _security[;3]
-          :If 0=Handlers.⎕NC⊂hook
-              ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Security hook "',hook,'" not found in Handlers'))
-          :ElseIf ~2 1≡|11 10 Handlers.⎕ATX hook
-              ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: Security hook "',hook,'" must be a result-returning dyadic function'))
-          :EndIf
+          'Security hook'_ValidateFn hook
       :EndFor
+    ∇
+
+    ⍝ Signal EN 11 unless fn names a result-returning dyadic (or ambivalent) function in Handlers
+    ∇ label _ValidateFn fn
+      :If 0=Handlers.⎕NC⊂fn
+          ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: ',label,' "',fn,'" not found in Handlers'))
+      :ElseIf ~2 1≡|11 10 Handlers.⎕ATX fn
+          ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: ',label,' "',fn,'" must be a result-returning dyadic function'))
+      :EndIf
     ∇
 
     ⍝ OpenAPI spec generation
@@ -490,13 +513,8 @@
       j.CodeLocation←code
       j.RESTFailProcessing←1
       j.Debug←+/(1 4 8 16)×1=2|⌊Debug÷1 4 8 16   ⍝ forward bits 1,4,8,16; bit 2 is replaced by Stark's bit 64/2
-      :If ~0∊⍴OnErrorFn
-          :If 0=Handlers.⎕NC⊂OnErrorFn
-              ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: OnErrorFn "',OnErrorFn,'" not found in Handlers'))
-          :ElseIf ~2 1≡|11 10 Handlers.⎕ATX OnErrorFn ⍝∧/(⊃Handlers.⎕AT OnErrorFn)∊¨1(2 ¯2)0
-              ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: OnErrorFn "',OnErrorFn,'" must be a result-returning dyadic function'))
-          :EndIf
-      :EndIf
+      :If ~0∊⍴OnErrorFn ⋄ 'OnErrorFn'_ValidateFn OnErrorFn ⋄ :EndIf
+      :If ~0∊⍴OnFailFn ⋄ 'OnFailFn'_ValidateFn OnFailFn ⋄ :EndIf
       _ValidateSecurity
       :If ''≢ThreadMode
           j.DYALOG_JARVIS_THREAD←ThreadMode

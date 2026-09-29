@@ -158,12 +158,16 @@ When no alternative passes, Stark responds with the first of these that applies:
 2. If a hook called `req.Fail` with an error status such as 403: that status and the standard status text, e.g. `(detail: 'Forbidden')`.
 3. Otherwise: `401` and `(detail: 'Not authenticated')`. This is also what a client gets when it sends no credential at all, because the hook isn't called.
 
+In cases 2 and 3 the body is Stark's default, so it goes through [`OnFailFn`](stark-router.md#failure-responses) if one is set. `fail.reason` is `'no_credential'` when no hook was called, and `'rejected'` otherwise; `fail.schemes` lists the schemes the route accepts. Case 1 doesn't: a body chosen with `auth.Reject` is sent as-is.
+
 Every 401 also carries a `WWW-Authenticate` header for each `http`, `oauth2` or `openIdConnect` scheme the route accepts: `Bearer`, or `Basic realm="<Info.title>", charset="UTF-8"`. `apiKey` schemes have no HTTP challenge, so a route that accepts only `apiKey` schemes sends no `WWW-Authenticate` header. If the hook set `WWW-Authenticate` itself, for example `Bearer error="invalid_token"` from RFC 6750, Stark keeps it and adds none of its own:
 
 ```apl
 'WWW-Authenticate' req.SetHeader 'Bearer error="invalid_token"'
 user←auth.Reject (detail:'Invalid token')
 ```
+
+Stark sets these headers before it calls `OnFailFn`, so the function can see them in `req.Response.Headers`.
 
 If one alternative is rejected but a later one passes, the rejection is undone: the status, body and any headers the failed hooks set are all discarded.
 

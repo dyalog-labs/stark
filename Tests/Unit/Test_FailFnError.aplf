@@ -1,0 +1,9 @@
+ r←Test_FailFnError dummy;router;req;result
+ ⍝ An error in OnFailFn is handled like a handler error, through OnErrorFn
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ router.OnFailFn←'BrokenFailFn'
+ router.OnErrorFn←'HandleError'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/nope')
+ result←router._Dispatch req
+ r←(500=req.Response.Status)∧('deliberate OnFailFn error'≡result.message)

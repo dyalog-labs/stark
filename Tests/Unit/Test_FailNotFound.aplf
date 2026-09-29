@@ -1,0 +1,10 @@
+ r←Test_FailNotFound dummy;router;req;result
+ ⍝ OnFailFn builds the body of Stark's 404
+ router←⎕NEW #.Stark
+ router.Handlers←#.Mocks.MockHandlers
+ router.OnFailFn←'FailBody'
+ '/items' router.Get 'ListItems'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/nope')
+ result←router._Dispatch req
+ r←(404=req.Response.Status)∧('not_found'≡result.reason)∧('Not Found'≡result.inner.detail)
+ r∧←404=#.Mocks.LastFail.status
