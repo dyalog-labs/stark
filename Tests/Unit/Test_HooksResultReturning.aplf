@@ -1,0 +1,8 @@
+ r←Test_HooksResultReturning dummy;router;req;result
+ ⍝ Hooks that return a result work too; the result is ignored
+ router←#.Mocks.NewHookRouter
+ router.OnRequestFn←'MarkRequestR'
+ router.OnResponseFn←'LogResponseR'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/items')
+ result←router._Dispatch req
+ r←('/items'≡#.Mocks.Seen)∧(1=≢#.Mocks.Log)∧(2=result.total)

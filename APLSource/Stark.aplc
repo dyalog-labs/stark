@@ -29,6 +29,8 @@
     :Field Public  Debug←0       ⍝ 0=all errors trapped, 1=stop on error in dispatch, 2=stop before user handler, 4=Jarvis framework debug, 8=Conga event logging, 16=stop before response, 32=Stark framework debug, 64=stop before routing
     :Field Public  OnErrorFn←''  ⍝ if set, called as err OnErrorFn req after Fail 500 instead of resignalling; err is a ⎕DMX clone
     :Field Public  OnFailFn←''   ⍝ if set, called as fail OnFailFn req to build the body of Stark's own 401/403/404/405 responses
+    :Field Public  OnRequestFn←'' ⍝ if set, called as OnRequestFn req before routing; req.Fail with an error status turns the request away
+    :Field Public  OnResponseFn←'' ⍝ if set, called as result OnResponseFn req once the response is known; observes only
     :Field Public  DocsSecurity←⍬ ⍝ security requirement for /openapi.json; ⍬ = public
     :Field Private _routes       ⍝ vector of route descriptor namespaces
     :Field Private _jarvis       ⍝ underlying Jarvis instance
@@ -215,10 +217,35 @@
         1(()⎕VSET↓⍉↑(0(7162⌶)names)(pathSplit[⍸varMask]))
     }
 
-    ⍝ Route an incoming Jarvis request to the matching handler
-    ∇ result←_Dispatch req;r;pp;m;i;ok;allow
+    ⍝ Entry point for every Jarvis request: routing (_Route), then OnResponseFn
+    ∇ result←_Dispatch req;sig
       :Access Public Instance
       stopIf DebugLevel 64                          ⍝ stop before routing
+      req.Route←''
+      :Trap 0 DebugLevel 1                          ⍝ only errors Stark re-signals get here
+          result←_Route req
+      :Else
+          sig←⊂⎕DMX.(('EN'EN)('EM'EM)('Message'(OSError{⍵,2⌽(×≢⊃⍬⍴2⌽⍺,⊂'')/'") ("',⊃⍬⍴2⌽⍺}Message)))
+          req.Fail 500
+          ⍬ _OnResponse req                         ⍝ log it before Jarvis turns it into a 500
+          ⎕SIGNAL sig
+      :EndTrap
+      result _OnResponse req
+    ∇
+
+    ⍝ OnRequestFn, then route the request to the matching handler
+    ∇ result←_Route req;r;pp;m;i;ok;allow;status
+      :If ~0∊⍴OnRequestFn
+          :Trap 0 DebugLevel 1             ⍝ disable trap if bit 1 set (stop on error)
+              OnRequestFn _Ignore req
+          :Else
+              result←_HandleError req ⋄ :Return
+          :EndTrap
+          :If 400≤status←req.Response.Status        ⍝ OnRequestFn turned the request away
+              result←(status: status ⋄ reason: 'blocked' ⋄ body: (detail: _StatusText status))_FailBody req
+              :Return
+          :EndIf
+      :EndIf
       m pp←↓⍉↑_routes[;2] pathMatch¨⊂req.Endpoint
       :If ~∨/m                                      ⍝ no route has this path
           req.Fail 404
@@ -238,6 +265,7 @@
       ⍝ segments over {param} ones, comparing left to right
       i←⊃⍋↑{'{'=⊃¨'/'(≠⊆⊢)⍵}¨r[;2]
       r←r[i;]
+      req.Route←2⊃r
       req.PathParams←i⊃pp
       req.QueryParams←() ⎕VSET ↓{⍵≡0 2⍴⍬:0 2⍴⍬⋄n←⍵⋄n[;1]←0(7162⌶)n[;1]⋄n}req.QueryParams
       :If DebugLevel 32
@@ -261,6 +289,28 @@
           :EndTrap
       :EndIf
     ∇
+
+    ⍝ Call OnResponseFn, if set, with the response body; an error in it is reported and otherwise ignored
+    ∇ result _OnResponse req
+      →0⍴⍨0∊⍴OnResponseFn
+      :Trap 0 DebugLevel 1
+          result(OnResponseFn _Ignore)req            ⍝ parenthesised: result OnResponseFn would strand as the operand
+      :Else
+          ⎕←'STARK: error in OnResponseFn "',OnResponseFn,'" (ignored): ',⎕DMX.(EM,(0<≢Message)/': ',Message)
+      :EndTrap
+    ∇
+
+    ⍝ Call the Handlers function fn, monadically or dyadically, ignoring any result
+    ∇ {larg}(fn _Ignore)rarg
+      :If 0=⎕NC'larg'
+          :If 0=10 Handlers.⎕ATX fn ⋄ (Handlers⍎fn)rarg ⋄ :Else ⋄ {}(Handlers⍎fn)rarg ⋄ :EndIf
+      :Else
+          :If 0=10 Handlers.⎕ATX fn ⋄ larg(Handlers⍎fn)rarg ⋄ :Else ⋄ {}larg(Handlers⍎fn)rarg ⋄ :EndIf
+      :EndIf
+    ∇
+
+    ⍝ Standard HTTP status text, e.g. 'Forbidden' for 403
+    _StatusText←{t←(⊃⊃⎕CLASS ⎕THIS).##.Jarvis.Request.HttpStatus ⋄ (t[;1]⍳⍵)⊃t[;2],⊂'Error'}
 
     ⍝ Handle an error trapped in a hook or handler: call OnErrorFn if set, otherwise resignal
     ∇ result←_HandleError req;err
@@ -338,7 +388,7 @@
     ⍝ ok=0: req.Fail has been called and body is the error response.
     ⍝ Entries are alternatives (any one must pass); schemes within an entry must all pass.
     ⍝ A hook rejects with 0, or with  [status] auth.Reject body  to choose the status and body.
-    ∇ (ok body)←r _Authenticate req;reqs;entry;names;name;i;def;hook;cred;user;sec;saved;status;challenges;challenge;text;auth;rejection;called
+    ∇ (ok body)←r _Authenticate req;reqs;entry;names;name;i;def;hook;cred;user;sec;saved;status;challenges;challenge;auth;rejection;called
       req.User←⍬
       req.Security←()
       ok←1 ⋄ body←⍬
@@ -385,8 +435,7 @@
           req.Fail status←401
           body←(detail: 'Not authenticated')
       :Else
-          text←(⊃⊃⎕CLASS ⎕THIS).##.Jarvis.Request.HttpStatus
-          body←(detail: (text[;1]⍳status)⊃text[;2],⊂'Error')
+          body←(detail: _StatusText status)
       :EndIf
       :If 401=status                                ⍝ a 401 must carry a challenge; keep the hook's own if it set one
       :AndIf 0∊⍴req.Response.Headers _HeaderValue'WWW-Authenticate'
@@ -452,16 +501,19 @@
           :EndFor
       :EndFor
       :For hook :In _security[;3]
-          'Security hook'_ValidateFn hook
+          'Security hook'_ValidateFn hook (2 ¯2) 1
       :EndFor
     ∇
 
-    ⍝ Signal EN 11 unless fn names a result-returning dyadic (or ambivalent) function in Handlers
-    ∇ label _ValidateFn fn
+    ⍝ Signal EN 11 unless fn names a function in Handlers whose valence is in valences
+    ⍝ (1 monadic, 2 dyadic, ¯2 ambivalent) and, if result is 1, that returns a result
+    ∇ label _ValidateFn(fn valences result);res;val
       :If 0=Handlers.⎕NC⊂fn
           ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: ',label,' "',fn,'" not found in Handlers'))
-      :ElseIf ~2 1≡|11 10 Handlers.⎕ATX fn
-          ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: ',label,' "',fn,'" must be a result-returning dyadic function'))
+      :EndIf
+      (val res)←11 10 Handlers.⎕ATX fn           ⍝ ⎕ATX, not ⎕AT: ⎕AT gives 0 0 0 for methods of a class instance
+      :If (~val∊valences)∨result>res≠0
+          ⎕SIGNAL ⊂('EN' 11)('Message' ('STARK: ',label,' "',fn,'" must be a ',(result/'result-returning '),((1+1∊valences)⊃'dyadic' 'monadic'),' function'))
       :EndIf
     ∇
 
@@ -513,8 +565,10 @@
       j.CodeLocation←code
       j.RESTFailProcessing←1
       j.Debug←+/(1 4 8 16)×1=2|⌊Debug÷1 4 8 16   ⍝ forward bits 1,4,8,16; bit 2 is replaced by Stark's bit 64/2
-      :If ~0∊⍴OnErrorFn ⋄ 'OnErrorFn'_ValidateFn OnErrorFn ⋄ :EndIf
-      :If ~0∊⍴OnFailFn ⋄ 'OnFailFn'_ValidateFn OnFailFn ⋄ :EndIf
+      :If ~0∊⍴OnErrorFn ⋄ 'OnErrorFn'_ValidateFn OnErrorFn (2 ¯2) 1 ⋄ :EndIf
+      :If ~0∊⍴OnFailFn ⋄ 'OnFailFn'_ValidateFn OnFailFn (2 ¯2) 1 ⋄ :EndIf
+      :If ~0∊⍴OnRequestFn ⋄ 'OnRequestFn'_ValidateFn OnRequestFn (1 ¯2) 0 ⋄ :EndIf
+      :If ~0∊⍴OnResponseFn ⋄ 'OnResponseFn'_ValidateFn OnResponseFn (2 ¯2) 0 ⋄ :EndIf
       _ValidateSecurity
       :If ''≢ThreadMode
           j.DYALOG_JARVIS_THREAD←ThreadMode

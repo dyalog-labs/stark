@@ -21,6 +21,8 @@ router←Stark.New ()
 | `Debug`      | `0`                                  | Bitmask controlling debug stops and logging (see [Debug mode](#debug-mode)) |
 | `OnErrorFn`  | `''`                                 | Name of a dyadic result-returning function in `Handlers` to call on handler errors (see [Error handling](#error-handling)) |
 | `OnFailFn`   | `''`                                 | Name of a dyadic result-returning function in `Handlers` that builds the body of Stark's own 401/403/404/405 responses (see [Failure responses](#failure-responses)) |
+| `OnRequestFn` | `''`                                | Name of a monadic function in `Handlers` to call before routing each request (see [Request hooks](#request-hooks)) |
+| `OnResponseFn` | `''`                               | Name of a dyadic function in `Handlers` to call once each response is known (see [Request hooks](#request-hooks)) |
 | `DocsSecurity` | `⍬`                                | Security requirement for `/openapi.json`; `⍬` keeps it public (see [Authentication](authentication.md#protecting-openapijson)) |
 
 ## Route registration
@@ -188,6 +190,7 @@ Handlers receive a Jarvis request object (`req`) with these key members:
 | `GetHeader name`   | Returns the value of a request header        |
 | `PathParams`       | Namespace of path parameter values           |
 | `QueryParams`      | Namespace of query parameter values          |
+| `Route`            | The matched route pattern, e.g. `'/items/{id}'`; `''` if no route matched |
 | `SetStatus code`   | Sets the response status code                |
 | `Fail code`        | Sets an error status code                    |
 | `User`             | The authenticated user returned by the security hook (see [Authentication](authentication.md)) |
@@ -371,12 +374,71 @@ router.OnFailFn←'FailBody'
 | `method_not_allowed` | 405    | The path matches a route, but not for this method; the `Allow` header is already set |
 | `no_credential`      | 401    | The route needs authentication and the request carries no credential for any scheme it accepts |
 | `rejected`           | 401, or the status a hook set with `req.Fail` | A security hook returned `0` |
+| `blocked`            | The status `OnRequestFn` set | [`OnRequestFn`](#request-hooks) turned the request away |
 
 The function's result becomes the response body. It can add headers with `req.SetHeader`. Bodies a security hook chose with [`auth.Reject`](authentication.md#rejecting-with-a-reason) don't go through `OnFailFn`.
 
 An error inside `OnFailFn` is handled like an error in a handler: it goes to `OnErrorFn` if set, and is re-signalled otherwise. Like `OnErrorFn`, the function must be result-returning and dyadic (or ambivalent); Stark checks this at `Start` and signals EN 11 otherwise. In a class, it must be `:Access Public`.
 
 `OnFailFn` can't change failures Jarvis handles before Stark sees the request, such as a `400` for a request body that can't be parsed.
+
+## Request hooks
+
+`OnRequestFn` and `OnResponseFn` run for every request Stark receives, for example to log requests:
+
+```apl
+router.OnRequestFn←'BeforeRequest'
+router.OnResponseFn←'LogRequest'
+
+∇ BeforeRequest req
+  req.Started←⎕AI[3]                      ⍝ stash anything you need later on req
+∇
+
+∇ result LogRequest req
+  ⎕←(1 ⎕C req.Method),' ',req.Endpoint,' (',req.Route,') → ',(⍕req.Response.Status),' in ',(⍕⎕AI[3]-req.Started),'ms'
+∇
+```
+
+```
+GET /items/1 (/items/{id}) → 200 in 0ms
+GET /nope () → 404 in 0ms
+GET /me (/me) → 401 in 1ms
+```
+
+Either hook may return a result, and Stark ignores it. Stark checks both at `Start` and signals EN 11 if one is missing or has the wrong valence. In a class, they must be `:Access Public`.
+
+### OnRequestFn
+
+`OnRequestFn req` runs before routing, so `req.Route`, `req.PathParams` and `req.User` aren't set yet.
+
+To turn a request away, for example for maintenance or rate limiting, call `req.Fail` with an error status (400 or higher). Stark then stops, without routing or calling a handler. The body is the standard status text, e.g. `(detail: 'Service Unavailable')`, or whatever [`OnFailFn`](#failure-responses) returns for `reason:'blocked'`:
+
+```apl
+∇ BeforeRequest req
+  :If Maintenance ⋄ req.Fail 503 ⋄ :EndIf
+∇
+```
+
+An error inside `OnRequestFn` is handled like an error in a handler: it goes to `OnErrorFn` if set, and is re-signalled otherwise.
+
+### OnResponseFn
+
+`result OnResponseFn req` runs once the response is known, with the response body as `result`. It runs for:
+
+- normal responses
+- `404` and `405`
+- authentication failures
+- requests turned away by `OnRequestFn`
+- `500`s built by `OnErrorFn`
+- errors Stark re-signals because `OnErrorFn` isn't set: `OnResponseFn` runs first, with status `500` and `result` set to `⍬`, and the error is then re-signalled as before
+
+It only observes: it can't change the status or the body. An error inside it is printed to the session and otherwise ignored, so a broken logger can't break the API.
+
+`req.Route` holds the matched route pattern, e.g. `'/items/{id}'`, so logs and metrics can group requests by route rather than by the literal path. It is `''` for `404`, `405` and requests turned away by `OnRequestFn`.
+
+Jarvis gives `req.Method` in lowercase, e.g. `'get'`; use `1 ⎕C req.Method` for uppercase.
+
+Requests Jarvis handles before Stark sees them, such as CORS preflight or a `400` for a request body that can't be parsed, don't reach either hook.
 
 ## Inspection
 

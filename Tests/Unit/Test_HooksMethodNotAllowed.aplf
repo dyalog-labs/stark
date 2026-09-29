@@ -1,0 +1,7 @@
+ r←Test_HooksMethodNotAllowed dummy;router;req;log
+ ⍝ OnResponseFn sees 405s
+ router←#.Mocks.NewHookRouter
+ req←⎕NEW #.Mocks.MockRequest ('DELETE' '/items')
+ {}router._Dispatch req
+ log←⊃#.Mocks.Log
+ r←(405=log.status)∧(''≡log.route)

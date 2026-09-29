@@ -1,0 +1,8 @@
+ r←Test_HooksOnErrorFn500 dummy;router;req;log
+ ⍝ OnResponseFn sees 500s handled by OnErrorFn
+ router←#.Mocks.NewHookRouter
+ router.OnErrorFn←'HandleError'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/broken')
+ {}router._Dispatch req
+ log←⊃#.Mocks.Log
+ r←(500=log.status)∧('/broken'≡log.route)∧(11=log.result.EN)

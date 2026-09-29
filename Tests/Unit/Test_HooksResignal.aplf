@@ -1,0 +1,11 @@
+ r←Test_HooksResignal dummy;router;req
+ ⍝ Without OnErrorFn, the error is still re-signalled, but OnResponseFn sees a 500 first
+ router←#.Mocks.NewHookRouter
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/broken')
+ :Trap 11
+     {}router._Dispatch req
+     r←0
+ :Else
+     r←∨/'deliberate error for testing'⍷⎕DMX.Message
+ :EndTrap
+ r∧←(1=≢#.Mocks.Log)∧(500=(⊃#.Mocks.Log).status)∧(⍬≡(⊃#.Mocks.Log).result)

@@ -1,0 +1,7 @@
+ r←Test_HooksSuccess dummy;router;req;result;log
+ ⍝ Both hooks run for a normal request; OnResponseFn sees the body and req.Route
+ router←#.Mocks.NewHookRouter
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/items/42')
+ result←router._Dispatch req
+ log←⊃#.Mocks.Log
+ r←('/items/42'≡#.Mocks.Seen)∧(1=≢#.Mocks.Log)∧('/items/{id}'≡log.route)∧('42'≡log.result.id)∧('42'≡result.id)

@@ -1,0 +1,7 @@
+ r←Test_HooksAuthFailure dummy;router;req;log
+ ⍝ OnResponseFn sees authentication failures, with the matched route
+ router←#.Mocks.NewHookRouter
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me')
+ {}router._Dispatch req
+ log←⊃#.Mocks.Log
+ r←(401=log.status)∧('/me'≡log.route)∧('Not authenticated'≡log.result.detail)

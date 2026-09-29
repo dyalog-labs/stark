@@ -1,0 +1,12 @@
+ r←Test_HooksBlocked dummy;router;req1;req2;res1;res2
+ ⍝ OnRequestFn turns a request away with req.Fail; the body is the status text, or OnFailFn's with reason blocked
+ router←#.Mocks.NewHookRouter
+ router.OnRequestFn←'Block'
+ req1←⎕NEW #.Mocks.MockRequest ('GET' '/items')
+ res1←router._Dispatch req1
+ r←(503=req1.Response.Status)∧('Service Unavailable'≡res1.detail)
+ r∧←(503=(⊃#.Mocks.Log).status)∧(''≡(⊃#.Mocks.Log).route)
+ router.OnFailFn←'FailBody'
+ req2←⎕NEW #.Mocks.MockRequest ('GET' '/items')
+ res2←router._Dispatch req2
+ r∧←('blocked'≡res2.reason)∧(503=#.Mocks.LastFail.status)

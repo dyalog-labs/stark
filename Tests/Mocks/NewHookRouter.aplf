@@ -1,0 +1,11 @@
+ router←NewHookRouter
+ ⍝ A router with OnRequestFn and OnResponseFn set, and #.Mocks.Log and #.Mocks.Seen cleared
+ router←#.Mocks.NewAuthRouter
+ router.OnRequestFn←'MarkRequest'
+ router.OnResponseFn←'LogResponse'
+ '/items' router.Get 'ListItems'
+ '/items/{id}' router.Get 'GetItem'
+ '/broken' router.Get 'BrokenHandler'
+ '/me' router.Get ('WhoAmI' (security:,(bearerAuth:⍬)))
+ #.Mocks.Log←⍬
+ #.Mocks.⎕EX'Seen'

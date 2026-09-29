@@ -1,0 +1,16 @@
+ r←Test_HooksStartValidation dummy;router;cases;field;fn;msg
+ ⍝ Start refuses an OnRequestFn that isn't monadic, or an OnResponseFn that isn't dyadic
+ cases←('OnRequestFn' 'CheckBearer' 'monadic')('OnRequestFn' 'NoSuchFn' 'not found')('OnResponseFn' 'ListItems' 'dyadic')
+ r←1
+ :For (field fn msg) :In cases
+     router←⎕NEW #.Stark
+     router.Handlers←#.Mocks.MockHandlers
+     router⍎field,'←''',fn,''''
+     :Trap 11
+         router.Start 19877
+         router.Stop
+         r←0
+     :Else
+         r∧←(∨/(field,' "',fn,'"')⍷⎕DMX.Message)∧∨/msg⍷⎕DMX.Message
+     :EndTrap
+ :EndFor

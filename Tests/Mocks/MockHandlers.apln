@@ -93,6 +93,42 @@
       ⎕SIGNAL ⊂('EN' 11)('Message' 'deliberate OnFailFn error')
     ∇
 
+    ⍝ Request hooks
+
+    ∇ MarkRequest req
+      ⍝ OnRequestFn with no result
+      #.Mocks.Seen←req.Endpoint
+    ∇
+
+    ∇ r←MarkRequestR req
+      ⍝ OnRequestFn with a result, which Stark ignores
+      #.Mocks.Seen←req.Endpoint
+      r←'ignored'
+    ∇
+
+    ∇ Block req
+      req.Fail 503
+    ∇
+
+    ∇ BrokenOnRequest req
+      ⎕SIGNAL ⊂('EN' 11)('Message' 'deliberate OnRequestFn error')
+    ∇
+
+    ∇ result LogResponse req
+      ⍝ OnResponseFn with no result: appends to #.Mocks.Log
+      #.Mocks.Log,←⊂(status: req.Response.Status ⋄ route: req.Route ⋄ result: result)
+    ∇
+
+    ∇ r←result LogResponseR req
+      ⍝ OnResponseFn with a result, which Stark ignores
+      #.Mocks.Log,←⊂(status: req.Response.Status ⋄ route: req.Route ⋄ result: result)
+      r←'ignored'
+    ∇
+
+    ∇ result BrokenOnResponse req
+      ⎕SIGNAL ⊂('EN' 11)('Message' 'deliberate OnResponseFn error')
+    ∇
+
     ∇ result←WhoAmI req
       result←(user: req.User)
     ∇

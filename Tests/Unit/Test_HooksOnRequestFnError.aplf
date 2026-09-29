@@ -1,0 +1,8 @@
+ r←Test_HooksOnRequestFnError dummy;router;req;result
+ ⍝ An error in OnRequestFn is handled like a handler error, and OnResponseFn still runs
+ router←#.Mocks.NewHookRouter
+ router.OnRequestFn←'BrokenOnRequest'
+ router.OnErrorFn←'HandleError'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/items')
+ result←router._Dispatch req
+ r←(500=req.Response.Status)∧('deliberate OnRequestFn error'≡result.message)∧(500=(⊃#.Mocks.Log).status)

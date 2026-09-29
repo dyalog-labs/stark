@@ -1,0 +1,7 @@
+ r←Test_HooksNotFound dummy;router;req;log
+ ⍝ OnResponseFn sees 404s, with req.Route empty
+ router←#.Mocks.NewHookRouter
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/nope')
+ {}router._Dispatch req
+ log←⊃#.Mocks.Log
+ r←(404=log.status)∧(''≡log.route)∧('Not Found'≡log.result.detail)

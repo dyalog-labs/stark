@@ -1,0 +1,7 @@
+ r←Test_HooksOnResponseFnError dummy;router;req;result
+ ⍝ An error in OnResponseFn doesn't change the response
+ router←#.Mocks.NewHookRouter
+ router.OnResponseFn←'BrokenOnResponse'
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/items')
+ result←router._Dispatch req
+ r←(0=req.Response.Status)∧(2=result.total)
