@@ -338,12 +338,14 @@
     ⍝ ok=1: request may proceed, req.User and req.Security are set.
     ⍝ ok=0: req.Fail has been called and body is the error response.
     ⍝ Entries are alternatives (any one must pass); schemes within an entry must all pass.
-    ∇ (ok body)←r _Authenticate req;reqs;entry;names;name;i;def;hook;cred;user;sec;saved;status;challenges;text
+    ⍝ A hook rejects with 0, or with  [status] auth.Reject body  to choose the status and body.
+    ∇ (ok body)←r _Authenticate req;reqs;entry;names;name;i;def;hook;cred;user;sec;saved;status;challenges;text;auth;rejection
       req.User←⍬
       req.Security←()
       ok←1 ⋄ body←⍬
       →0⍴⍨0=≢reqs←_Requirements r
-      saved←req.Response.(Status StatusText)
+      saved←req.Response.(Status StatusText Headers)
+      rejection←⍬
       :For entry :In reqs
           sec←()
           ok←1
@@ -354,7 +356,10 @@
               :If 0∊⍴cred
                   user←0                        ⍝ no credential: don't call the hook
               :Else
-                  user←(scheme:1(7162⌶)name ⋄ credential:cred ⋄ scopes:entry _Scopes name)(Handlers⍎hook)req
+                  auth←(scheme:1(7162⌶)name ⋄ credential:cred ⋄ scopes:entry _Scopes name)
+                  auth.Reject←_Reject
+                  user←auth(Handlers⍎hook)req
+                  :If (0≡user)∧0≠auth.⎕NC'rejection' ⋄ rejection←auth.rejection ⋄ :EndIf
               :EndIf
               :If DebugLevel 32
                   ⎕←'STARK: auth ',(1(7162⌶)name),' → ',(1+0≡user)⊃'ok' 'fail'
@@ -366,15 +371,24 @@
               :EndIf
           :EndFor
           :If ok
-              req.Response.(Status StatusText)←saved   ⍝ undo any Fail from an alternative that didn't pass
+              req.Response.(Status StatusText Headers)←saved   ⍝ undo any Fail from an alternative that didn't pass
               req.Security←sec
               :If 0<≢names ⋄ req.User←sec⍎⊃names ⋄ :EndIf
               :Return
           :EndIf
       :EndFor
-      status←req.Response.Status
-      :If status<400                                ⍝ no hook chose an error status
-          req.Fail 401
+      :If 0<≢rejection                              ⍝ a hook called auth.Reject
+          (status body)←rejection
+          req.Fail status
+      :ElseIf 400>status←req.Response.Status        ⍝ no hook chose an error status
+          req.Fail status←401
+          body←(detail: 'Not authenticated')
+      :Else
+          text←(⊃⊃⎕CLASS ⎕THIS).##.Jarvis.Request.HttpStatus
+          body←(detail: (text[;1]⍳status)⊃text[;2],⊂'Error')
+      :EndIf
+      :If 401=status                                ⍝ a 401 must carry a challenge; keep the hook's own if it set one
+      :AndIf 0∊⍴req.Response.Headers _HeaderValue'WWW-Authenticate'
           challenges←∪{
               def←⊃_security[(_Mangle¨_security[;1])⍳⊂⍵;2]
               t s←⎕C¨def ⎕VGET('type' '')('scheme' '')
@@ -384,12 +398,19 @@
               ''
           }¨⊃,/{⍵.⎕NL ¯2}¨reqs
           {'WWW-Authenticate'req.SetHeader ⍵}¨challenges~⊂''
-          body←(detail: 'Not authenticated')
-      :Else
-          text←(⊃⊃⎕CLASS ⎕THIS).##.Jarvis.Request.HttpStatus
-          body←(detail: (text[;1]⍳status)⊃text[;2],⊂'Error')
       :EndIf
     ∇
+
+    ⍝ auth.Reject for hooks:  user←[status] auth.Reject body  records the rejection in auth and returns 0
+    _Reject←{
+        ⍺←401
+        ~(⊂⍺)∊400+(⍳100)-⎕IO:⎕SIGNAL⊂('EN' 11)('Message' ('STARK: auth.Reject status must be 400-499, got ',⍕⍺))
+        ⎕THIS.rejection←⍺ ⍵
+        0
+    }
+
+    ⍝ Case-insensitive lookup in a name/value header matrix; '' if absent
+    _HeaderValue←{((⎕C ⍺[;1])⍳⊂⎕C ⍵)⊃⍺[;2],⊂''}
 
     ⍝ Check at Start that every referenced scheme is registered and every hook is callable
     ∇ _ValidateSecurity;all;entry;hook;name;def

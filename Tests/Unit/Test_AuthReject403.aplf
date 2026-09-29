@@ -1,0 +1,8 @@
+ r←Test_AuthReject403 dummy;router;req;result
+ ⍝ 403 auth.Reject body gives a 403 with the hook's body and no challenge
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:,(strictAuth:⍬)))
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer scope'))
+ result←router._Dispatch req
+ r←(403=req.Response.Status)∧('Missing scope'≡result.detail)
+ r∧←~(⊂'WWW-Authenticate')∊req.Response.Headers[;1]

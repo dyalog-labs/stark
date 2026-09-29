@@ -1,5 +1,6 @@
  r←Test_AuthBadToken dummy;h;resp
+ ⍝ The example's hook rejects a wrong token with auth.Reject and its own body
  h←#.HttpCommand.New 'get' (BaseURL,'/me')
  (h.AuthType h.Auth)←'Bearer' 'wrong'
  resp←h.Run
- r←401=resp.HttpStatus
+ r←(401=resp.HttpStatus)∧('Invalid token'≡(⎕JSON resp.Data).detail)∧('Bearer'≡resp.GetHeader'WWW-Authenticate')

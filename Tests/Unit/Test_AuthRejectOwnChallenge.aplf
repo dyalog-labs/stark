@@ -1,0 +1,8 @@
+ r←Test_AuthRejectOwnChallenge dummy;router;req;result;h
+ ⍝ A WWW-Authenticate header set by the hook is kept, and Stark doesn't add its own
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:,(strictAuth:⍬)))
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer ownheader'))
+ result←router._Dispatch req
+ h←(req.Response.Headers[;1]≡¨⊂'WWW-Authenticate')/req.Response.Headers[;2]
+ r←(401=req.Response.Status)∧('Invalid token'≡result.detail)∧(h≡,⊂'Bearer error="invalid_token"')

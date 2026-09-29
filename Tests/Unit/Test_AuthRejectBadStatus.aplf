@@ -1,0 +1,8 @@
+ r←Test_AuthRejectBadStatus dummy;router;req;result
+ ⍝ auth.Reject with a status outside 400-499 is an error in the hook
+ router←#.Mocks.NewAuthRouter
+ router.OnErrorFn←'HandleError'
+ '/me' router.Get ('WhoAmI' (security:,(strictAuth:⍬)))
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer badstatus'))
+ result←router._Dispatch req
+ r←(500=req.Response.Status)∧(∨/'400-499'⍷result.message)

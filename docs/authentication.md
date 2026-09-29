@@ -89,23 +89,41 @@ user←auth Hook req
 | `scheme`     | The scheme name, e.g. `'bearerAuth'` |
 | `credential` | The credential Stark extracted from the request (see below) |
 | `scopes`     | The scopes the route requires, as a vector of strings (`⍬` if none) |
+| `Reject`     | A function for rejecting with your own status and body (see below) |
 
 The hook returns:
 
 - **the authenticated user** — any value except the scalar `0`. Stark stores it in `req.User`.
-- **`0`** to reject the request. Stark responds `401 Unauthorized`.
+- **`0`** to reject the request. Stark responds `401` with `(detail: 'Not authenticated')`.
 
-To reject a user who is authenticated but not allowed, call `req.Fail 403` and return `0`. Stark keeps the 403:
+### Rejecting with a reason
+
+To tell the client why a request was rejected, return the result of `auth.Reject`:
 
 ```apl
-∇ user←auth CheckOAuth req
-  user←LookupToken auth.credential
-  :If 0≢user
-  :AndIf ~∧/auth.scopes∊user.scopes
-      req.Fail 403 ⋄ user←0           ⍝ authenticated but missing a scope
+user←[status] auth.Reject body
+```
+
+It records the rejection and returns `0`. `status` defaults to `401` and must be between 400 and 499; any other value is an error in the hook. `body` is any value Jarvis can serialise, and becomes the response body.
+
+```apl
+∇ user←auth CheckOAuth req;tok
+  tok←LookupToken auth.credential
+  :If 0≡tok
+      user←auth.Reject (detail:'Invalid token')                     ⍝ 401
+  :ElseIf tok.expired
+      user←auth.Reject (detail:'Token expired' ⋄ code:'token_expired')
+  :ElseIf ~∧/auth.scopes∊tok.scopes
+      user←403 auth.Reject (detail:'Missing scope' ⋄ required:auth.scopes)
+  :Else
+      user←tok.user
   :EndIf
 ∇
 ```
+
+Use `401` when the credential is missing, invalid or expired, and `403` when the user is known but not allowed.
+
+The older form still works: call `req.Fail 403` and return `0`, and Stark responds 403 with `(detail: 'Forbidden')`.
 
 If an error occurs in a hook, it is handled like an error in a handler: it goes to [`OnErrorFn`](stark-router.md#error-handling) if set, and is re-signalled otherwise.
 
@@ -134,12 +152,20 @@ If the request doesn't carry the credential, Stark treats that scheme as failed 
 
 ## Failed requests
 
-When no alternative passes, Stark responds with:
+When no alternative passes, Stark responds with the first of these that applies:
 
-- `401` and `(detail: 'Not authenticated')`, plus a `WWW-Authenticate` header for each `http`, `oauth2` or `openIdConnect` scheme the route accepts: `Bearer`, or `Basic realm="<Info.title>", charset="UTF-8"`
-- or, if a hook called `req.Fail` with another error status such as 403, that status and `(detail: 'Forbidden')` (the standard status text)
+1. If any hook called `auth.Reject`: the status and body from the most recent call.
+2. If a hook called `req.Fail` with an error status such as 403: that status and the standard status text, e.g. `(detail: 'Forbidden')`.
+3. Otherwise: `401` and `(detail: 'Not authenticated')`. This is also what a client gets when it sends no credential at all, because the hook isn't called.
 
-If one alternative fails with a 403 but a later one passes, the 403 is undone.
+Every 401 also carries a `WWW-Authenticate` header for each `http`, `oauth2` or `openIdConnect` scheme the route accepts: `Bearer`, or `Basic realm="<Info.title>", charset="UTF-8"`. If the hook set `WWW-Authenticate` itself, for example `Bearer error="invalid_token"` from RFC 6750, Stark keeps it and adds none of its own:
+
+```apl
+'WWW-Authenticate' req.SetHeader 'Bearer error="invalid_token"'
+user←auth.Reject (detail:'Invalid token')
+```
+
+If one alternative is rejected but a later one passes, the rejection is undone: the status, body and any headers the failed hooks set are all discarded.
 
 ## Protecting /openapi.json
 

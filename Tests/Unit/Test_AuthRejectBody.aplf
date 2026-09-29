@@ -1,0 +1,8 @@
+ r←Test_AuthRejectBody dummy;router;req;result
+ ⍝ auth.Reject body gives a 401 with the hook's body, plus Stark's challenge
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:,(strictAuth:⍬)))
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (1 2⍴'Authorization' 'Bearer expired'))
+ result←router._Dispatch req
+ r←(401=req.Response.Status)∧('Token expired'≡result.detail)∧('token_expired'≡result.code)
+ r∧←(⊂'WWW-Authenticate' 'Bearer')∊↓req.Response.Headers

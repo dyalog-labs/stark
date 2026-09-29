@@ -61,6 +61,19 @@
       user←(1+auth.credential≡'alice' 'secret')⊃0 'alice'
     ∇
 
+    ∇ user←auth CheckStrict req
+      ⍝ Rejects with auth.Reject in different ways depending on the token
+      :Select auth.credential
+      :Case 'expired' ⋄ user←auth.Reject (detail: 'Token expired' ⋄ code: 'token_expired')
+      :Case 'scope' ⋄ user←403 auth.Reject (detail: 'Missing scope')
+      :Case 'badstatus' ⋄ user←200 auth.Reject (detail: 'nope')
+      :Case 'ownheader'
+          'WWW-Authenticate' req.SetHeader 'Bearer error="invalid_token"'
+          user←auth.Reject (detail: 'Invalid token')
+      :Else ⋄ user←0
+      :EndSelect
+    ∇
+
     ∇ user←auth RecordAuth req
       #.Mocks.LastAuth←auth
       user←'recorded'

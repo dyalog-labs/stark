@@ -1,0 +1,7 @@
+ r←Test_AuthRejectDiscarded dummy;router;req;result
+ ⍝ A rejection (and any headers it set) is discarded when a later alternative passes
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:(strictAuth:⍬)(apiKey:⍬)))
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me' (2 2⍴'Authorization' 'Bearer ownheader' 'X-API-Key' 'key123'))
+ result←router._Dispatch req
+ r←(0=req.Response.Status)∧('service'≡result.user)∧(0=≢req.Response.Headers)

@@ -3,6 +3,6 @@
   :If auth.credential≡'secret-token'
       user←(name:'demo')
   :Else
-      user←0
+      user←auth.Reject (detail:'Invalid token')    ⍝ 401 with this body
   :EndIf
 ∇
