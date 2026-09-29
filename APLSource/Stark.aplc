@@ -339,7 +339,7 @@
     ⍝ ok=0: req.Fail has been called and body is the error response.
     ⍝ Entries are alternatives (any one must pass); schemes within an entry must all pass.
     ⍝ A hook rejects with 0, or with  [status] auth.Reject body  to choose the status and body.
-    ∇ (ok body)←r _Authenticate req;reqs;entry;names;name;i;def;hook;cred;user;sec;saved;status;challenges;text;auth;rejection
+    ∇ (ok body)←r _Authenticate req;reqs;entry;names;name;i;def;hook;cred;user;sec;saved;status;challenges;challenge;text;auth;rejection
       req.User←⍬
       req.Security←()
       ok←1 ⋄ body←⍬
@@ -397,7 +397,9 @@
               (⊂t)∊'oauth2' 'openidconnect':'Bearer'
               ''
           }¨⊃,/{⍵.⎕NL ¯2}¨reqs
-          {'WWW-Authenticate'req.SetHeader ⍵}¨challenges~⊂''
+          :For challenge :In challenges~⊂''       ⍝ :For, not ¨, which would call SetHeader once on the prototype when empty
+              'WWW-Authenticate'req.SetHeader challenge
+          :EndFor
       :EndIf
     ∇
 

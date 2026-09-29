@@ -1,0 +1,7 @@
+ r←Test_AuthApiKeyNoChallenge dummy;router;req
+ ⍝ apiKey schemes have no HTTP challenge, so a 401 carries no WWW-Authenticate header
+ router←#.Mocks.NewAuthRouter
+ '/me' router.Get ('WhoAmI' (security:,(apiKey:⍬)))
+ req←⎕NEW #.Mocks.MockRequest ('GET' '/me')
+ {}router._Dispatch req
+ r←(401=req.Response.Status)∧0=≢req.Response.Headers

@@ -158,7 +158,7 @@ When no alternative passes, Stark responds with the first of these that applies:
 2. If a hook called `req.Fail` with an error status such as 403: that status and the standard status text, e.g. `(detail: 'Forbidden')`.
 3. Otherwise: `401` and `(detail: 'Not authenticated')`. This is also what a client gets when it sends no credential at all, because the hook isn't called.
 
-Every 401 also carries a `WWW-Authenticate` header for each `http`, `oauth2` or `openIdConnect` scheme the route accepts: `Bearer`, or `Basic realm="<Info.title>", charset="UTF-8"`. If the hook set `WWW-Authenticate` itself, for example `Bearer error="invalid_token"` from RFC 6750, Stark keeps it and adds none of its own:
+Every 401 also carries a `WWW-Authenticate` header for each `http`, `oauth2` or `openIdConnect` scheme the route accepts: `Bearer`, or `Basic realm="<Info.title>", charset="UTF-8"`. `apiKey` schemes have no HTTP challenge, so a route that accepts only `apiKey` schemes sends no `WWW-Authenticate` header. If the hook set `WWW-Authenticate` itself, for example `Bearer error="invalid_token"` from RFC 6750, Stark keeps it and adds none of its own:
 
 ```apl
 'WWW-Authenticate' req.SetHeader 'Bearer error="invalid_token"'
