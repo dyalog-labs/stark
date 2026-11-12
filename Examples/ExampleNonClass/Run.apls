@@ -3,6 +3,11 @@
 ⎕IO←1
 ⎕SE.(⍎⊃2⎕FIX'/StartupSession.aplf',⍨2⎕NQ#'GetEnvironment' 'DYALOG')
 
+⍝ Load Jarvis from Tatin (fetched on first run, as listed in packages/apl-dependencies.txt)
+{}⎕SE.UCMD 'Tatin.Version' ⍝ make sure Tatin is loaded into ⎕SE
+{}⎕SE.Tatin.ReInstallDependencies⍣(~1∊⊃1 ⎕NINFO⍠1⊢'../../packages/*')⊢'../../packages'
+{}⎕SE.Tatin.LoadDependencies '../../packages' #
+
 ⎕SE.Link.Import '#' '../../APLSource'
 ⎕SE.Link.Import '#' 'APLSource'
 

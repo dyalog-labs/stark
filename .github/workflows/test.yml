@@ -16,9 +16,12 @@ jobs:
     steps:
       - name: Install Node.js
         run: |
-          apt-get update && apt-get install -y nodejs
+          apt-get update && apt-get install -y git nodejs zip unzip
 
       - uses: actions/checkout@v4
+
+      - name: Activate Tatin and Cider
+        run: dyalogscript .github/activate.apls
 
       - name: Run tests
         run: cd Tests && dyalogscript RunTests.apls

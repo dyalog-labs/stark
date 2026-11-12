@@ -32,7 +32,7 @@ router.Start 8080
 
 - Dyalog APL 20.0 or later
 - Conga networking library (ships with Dyalog)
-- Jarvis 1.22 or later (installed automatically as a Tatin dependency; a copy is also provided in `APLSource`)
+- Jarvis 1.22 or later (installed automatically as a Tatin dependency)
 
 See [Getting started](getting-started.md#1-install-stark) for installation.
 
@@ -40,7 +40,6 @@ See [Getting started](getting-started.md#1-install-stark) for installation.
 
 ```
 APLSource/
-  Jarvis.aplc              ← HTTP server (Dyalog library)
   Stark.aplc               ← Router / framework
 Examples/
   ExampleClass/
@@ -54,5 +53,7 @@ Tests/
   Integration/             ← Integration tests (run against ExampleApp)
   RunTests.apls            ← Script to run all tests
 docs/                      ← This documentation
+packages/                  ← Tatin dependencies (Jarvis)
+packages_dev/              ← Tatin development dependencies (HttpCommand, used by the tests)
 apl-package.json           ← Tatin package definition
 ```

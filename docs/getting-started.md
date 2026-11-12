@@ -9,6 +9,8 @@ cd Examples/ExampleClass
 dyalogscript Run.apls
 ```
 
+The script fetches Jarvis from Tatin on its first run, so Tatin must be activated (`]Activate all`) and tatin.dev reachable.
+
 This starts an HTTP server on port 8080 with several demo endpoints. Try it out:
 
 ```bash
@@ -40,11 +42,11 @@ To install it into a project and load it from there:
 Either way, `#.Stark` refers to the Stark class.
 
 ??? note "Without Tatin"
-    Copy `Stark.aplc` and `Jarvis.aplc` from this repository's `APLSource` folder and import them **into the same namespace**. Stark looks for Jarvis alongside itself, so the two must be siblings:
+    Copy `Stark.aplc` from this repository's `APLSource` folder, get the Jarvis class from the [Jarvis repository](https://github.com/Dyalog/Jarvis), and import them **into the same namespace**. Stark looks for Jarvis alongside itself, so the two must be siblings:
 
     ```apl
     ]link.import # ./APLSource/Stark.aplc
-    ]link.import # ./APLSource/Jarvis.aplc
+    ]link.import # /path/to/Jarvis.dyalog
     ```
 
 ### 2. Write a handler

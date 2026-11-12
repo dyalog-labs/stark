@@ -3,11 +3,20 @@
 ⎕IO←1
 ⎕SE.(⍎⊃2⎕FIX'/StartupSession.aplf',⍨2⎕NQ#'GetEnvironment' 'DYALOG')
 
-⍝ Load framework
+⍝ Load Tatin dependencies: Jarvis (runtime) and HttpCommand (tests only).
+⍝ Packages are fetched on first run, as listed in each folder's apl-dependencies.txt.
+{}⎕SE.UCMD 'Tatin.Version' ⍝ make sure Tatin is loaded into ⎕SE
+LoadDeps←{
+    installed←1∊⊃1 ⎕NINFO⍠1⊢⍵,'/*'
+    _←{⎕SE.Tatin.ReInstallDependencies ⍵}⍣(~installed)⊢⍵
+    ⎕SE.Tatin.LoadDependencies ⍵ #
+}
+{}LoadDeps¨'../packages' '../packages_dev'
+
+⍝ Load framework (must sit alongside Jarvis)
 ⎕SE.Link.Import '#' '../APLSource'
 
-⍝ Load HttpCommand and mocks
-⎕SE.Link.Import '#' './HttpCommand.aplc'
+⍝ Load mocks
 ⎕SE.Link.Import '#.Mocks' './Mocks'
 
 ⍝ Load test runner
